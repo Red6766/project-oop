@@ -1,0 +1,230 @@
+syntax = "proto3";
+
+option csharp_namespace = "TaskManagement.Grpc";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+package taskmanagement;
+
+service AuthService {
+  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc Register (RegisterRequest) returns (UserResponse);
+}
+
+service UserService {
+  rpc GetUser (GetUserRequest) returns (UserResponse);
+  rpc ListUsers (ListUsersRequest) returns (ListUsersResponse);
+}
+
+service ProjectService {
+  rpc CreateProject (CreateProjectRequest) returns (ProjectResponse);
+  rpc GetProject (GetProjectRequest) returns (ProjectResponse);
+  rpc ListProjects (ListProjectsRequest) returns (ListProjectsResponse);
+  rpc AddMember (AddProjectMemberRequest) returns (ProjectResponse);
+  rpc RemoveMember (RemoveProjectMemberRequest) returns (google.protobuf.Empty);
+}
+
+service TaskService {
+  rpc CreateTask (CreateTaskRequest) returns (TaskResponse);
+  rpc GetTask (GetTaskRequest) returns (TaskResponse);
+  rpc ListTasks (ListTasksRequest) returns (ListTasksResponse);
+  rpc AssignTask (AssignTaskRequest) returns (TaskResponse);
+  rpc ChangeStatus (ChangeTaskStatusRequest) returns (TaskResponse);
+}
+
+service CommentService {
+  rpc CreateComment (CreateCommentRequest) returns (CommentResponse);
+  rpc ListComments (ListCommentsRequest) returns (ListCommentsResponse);
+}
+
+service HistoryService {
+  rpc GetHistory (GetTaskHistoryRequest) returns (HistoryResponse);
+}
+
+enum UserRole {
+  USER_ROLE_UNSPECIFIED = 0;
+  USER_ROLE_ADMIN = 1;
+  USER_ROLE_MANAGER = 2;
+  USER_ROLE_EXECUTOR = 3;
+  USER_ROLE_OBSERVER = 4;
+}
+
+enum TaskStatus {
+  TASK_STATUS_UNSPECIFIED = 0;
+  TASK_STATUS_TODO = 1;
+  TASK_STATUS_IN_PROGRESS = 2;
+  TASK_STATUS_REVIEW = 3;
+  TASK_STATUS_DONE = 4;
+}
+
+enum TaskPriority {
+  TASK_PRIORITY_UNSPECIFIED = 0;
+  TASK_PRIORITY_LOW = 1;
+  TASK_PRIORITY_MEDIUM = 2;
+  TASK_PRIORITY_HIGH = 3;
+  TASK_PRIORITY_CRITICAL = 4;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+  UserResponse user = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+message RegisterRequest {
+  string username = 1;
+  string email = 2;
+  string password = 3;
+  UserRole role = 4;
+}
+
+message GetUserRequest {
+  int32 id = 1;
+}
+
+message ListUsersRequest {
+  int32 page_size = 1;
+  int32 page_token = 2;
+}
+
+message ListUsersResponse {
+  repeated UserResponse users = 1;
+}
+
+message CreateProjectRequest {
+  string name = 1;
+  string description = 2;
+  int32 created_by_id = 3;
+}
+
+message GetProjectRequest {
+  int32 id = 1;
+}
+
+message ListProjectsRequest {
+  int32 user_id = 1;
+  int32 page_size = 2;
+  int32 page_token = 3;
+}
+
+message AddProjectMemberRequest {
+  int32 project_id = 1;
+  int32 user_id = 2;
+}
+
+message RemoveProjectMemberRequest {
+  int32 project_id = 1;
+  int32 user_id = 2;
+}
+
+message CreateTaskRequest {
+  string title = 1;
+  string description = 2;
+  int32 project_id = 3;
+  int32 created_by_id = 4;
+  TaskPriority priority = 5;
+}
+
+message GetTaskRequest {
+  int32 id = 1;
+}
+
+message ListTasksRequest {
+  int32 project_id = 1;
+  int32 page_size = 2;
+  int32 page_token = 3;
+}
+
+message AssignTaskRequest {
+  int32 task_id = 1;
+  int32 assignee_id = 2;
+}
+
+message ChangeTaskStatusRequest {
+  int32 task_id = 1;
+  TaskStatus status = 2;
+  string comment = 3;
+  int32 actor_id = 4;
+}
+
+message CreateCommentRequest {
+  int32 task_id = 1;
+  string text = 2;
+  int32 user_id = 3;
+}
+
+message ListCommentsRequest {
+  int32 task_id = 1;
+}
+
+message GetTaskHistoryRequest {
+  int32 task_id = 1;
+}
+
+message UserResponse {
+  int32 id = 1;
+  string username = 2;
+  string email = 3;
+  UserRole role = 4;
+}
+
+message ProjectResponse {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  int32 created_by_id = 4;
+  repeated int32 member_ids = 5;
+}
+
+message TaskResponse {
+  int32 id = 1;
+  string title = 2;
+  string description = 3;
+  int32 project_id = 4;
+  int32 assignee_id = 5;
+  TaskStatus status = 6;
+  TaskPriority priority = 7;
+  int32 created_by_id = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+message CommentResponse {
+  int32 id = 1;
+  int32 task_id = 2;
+  string text = 3;
+  int32 user_id = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message ListProjectsResponse {
+  repeated ProjectResponse projects = 1;
+}
+
+message ListTasksResponse {
+  repeated TaskResponse tasks = 1;
+}
+
+message ListCommentsResponse {
+  repeated CommentResponse comments = 1;
+}
+
+message HistoryResponse {
+  repeated TaskHistory history = 1;
+}
+
+message TaskHistory {
+  int32 id = 1;
+  int32 task_id = 2;
+  TaskStatus from_status = 3;
+  TaskStatus to_status = 4;
+  string comment = 5;
+  int32 changed_by_id = 6;
+  google.protobuf.Timestamp created_at = 7;
+}

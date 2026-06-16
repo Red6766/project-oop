@@ -1,0 +1,8 @@
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.HeapView
+.vscode/
+*.csproj.user
