@@ -7,9 +7,11 @@ namespace TaskManagement.Models
         public int Id { get; set; }
         public int TaskId { get; set; }
         public TaskItem Task { get; set; } = default!;
-        public string OldStatus { get; set; } = string.Empty;
-        public string NewStatus { get; set; } = string.Empty;
-        public string ChangedBy { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public TaskStatus OldStatus { get; set; }
+        public TaskStatus NewStatus { get; set; }
+        public int ChangedById { get; set; }
+        public User ChangedBy { get; set; } = default!;
+        public string Comment { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

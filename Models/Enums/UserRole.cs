@@ -2,9 +2,9 @@ namespace TaskManagement.Models
 {
     public enum UserRole
     {
-        Admin = 0,
-        Manager = 1,
-        Executor = 2,
-        Observer = 3
+        Admin = 1,
+        Manager = 2,
+        Executor = 3,
+        Observer = 4
     }
 }

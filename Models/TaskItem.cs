@@ -17,6 +17,7 @@ namespace TaskManagement.Models
         public int CreatedById { get; set; }
         public User CreatedBy { get; set; } = default!;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? DueDate { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
         public ICollection<TaskHistory> Histories { get; set; } = new List<TaskHistory>();

@@ -24,7 +24,7 @@ public class UserServiceHandler : UserService.UserServiceBase
             Id = user.Id,
             Username = user.Username,
             Email = user.Email,
-            Role = (UserRole)Enum.Parse(typeof(UserRole), user.Role)
+            Role = (UserRole)(int)user.Role
         };
     }
 
@@ -39,7 +39,7 @@ public class UserServiceHandler : UserService.UserServiceBase
                 Id = u.Id,
                 Username = u.Username,
                 Email = u.Email,
-                Role = (UserRole)Enum.Parse(typeof(UserRole), u.Role)
+                Role = (UserRole)(int)u.Role
             });
         }
         return response;

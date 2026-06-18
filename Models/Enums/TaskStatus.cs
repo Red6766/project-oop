@@ -2,9 +2,9 @@ namespace TaskManagement.Models
 {
     public enum TaskStatus
     {
-        ToDo = 0,
-        InProgress = 1,
-        Review = 2,
-        Done = 3
+        ToDo = 1,
+        InProgress = 2,
+        Review = 3,
+        Done = 4
     }
 }

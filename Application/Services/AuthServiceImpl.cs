@@ -17,7 +17,7 @@ namespace TaskManagement.Application.Services
                 Username = username,
                 Email = email,
                 PasswordHash = hashedPassword,
-                Role = role.ToString()
+                Role = role
             };
 
             return await Task.FromResult(user);
@@ -30,7 +30,7 @@ namespace TaskManagement.Application.Services
                 Id = 1,
                 Username = "admin",
                 Email = email,
-                Role = UserRole.Admin.ToString()
+                Role = UserRole.Admin
             });
         }
     }

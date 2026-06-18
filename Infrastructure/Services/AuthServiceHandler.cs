@@ -24,7 +24,7 @@ public class AuthServiceHandler : AuthService.AuthServiceBase
                 Id = user.Id,
                 Username = user.Username,
                 Email = user.Email,
-                Role = (UserRole)Enum.Parse(typeof(UserRole), user.Role)
+                Role = (UserRole)(int)user.Role
             },
             ExpiresAt = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.UtcNow.AddHours(1))
         };
@@ -38,7 +38,7 @@ public class AuthServiceHandler : AuthService.AuthServiceBase
             Id = user.Id,
             Username = user.Username,
             Email = user.Email,
-            Role = (UserRole)Enum.Parse(typeof(UserRole), user.Role)
+            Role = (UserRole)(int)user.Role
         };
     }
 }
