@@ -7,6 +7,8 @@ obj/
 .vscode/
 *.csproj.user
 Migrations/
+Infrastructure/Migrations/
 frontend/node_modules/
 frontend/dist/
+frontend/.vite/
 *.env
