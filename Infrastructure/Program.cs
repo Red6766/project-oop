@@ -19,12 +19,27 @@ builder.Services.AddScoped<ITaskService, TaskServiceImpl>();
 builder.Services.AddScoped<ICommentService, CommentServiceImpl>();
 builder.Services.AddScoped<IHistoryService, HistoryServiceImpl>();
 
+// CORS для React dev server
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
+app.UseCors();
+app.UseGrpcWeb();
+
 // Configure the HTTP request pipeline
-app.MapGrpcService<AuthServiceHandler>();
-app.MapGrpcService<UserServiceHandler>();
-app.MapGrpcService<ProjectServiceHandler>();
+app.MapGrpcService<AuthServiceHandler>().EnableGrpcWeb();
+app.MapGrpcService<UserServiceHandler>().EnableGrpcWeb();
+app.MapGrpcService<ProjectServiceHandler>().EnableGrpcWeb();
+app.MapGrpcService<TaskServiceHandler>().EnableGrpcWeb();
 
 app.MapGet("/", () => "Task Management gRPC Server is running.");
 

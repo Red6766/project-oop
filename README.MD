@@ -1,72 +1,59 @@
 # Task Management System
 
-gRPC-сервер на .NET 9, PostgreSQL, Entity Framework Core.
+gRPC-сервер + React-фронтенд. .NET 9, PostgreSQL, gRPC-Web.
 
 ## Быстрый старт
 
 ```bash
-# 1. Запустить PostgreSQL
+# 1. PostgreSQL
 docker run -d -e POSTGRES_USER=taskuser -e POSTGRES_PASSWORD=taskpwd \
   -e POSTGRES_DB=taskdb -p 5432:5432 postgres:15
 
-# 2. Применить миграции
+# 2. Миграции
 dotnet ef database update
 
-# 3. Запустить сервер (http://localhost:5000)
+# 3. Бэкенд (порт 5000)
 dotnet run
+
+# 4. Фронтенд (новый терминал, порт 5173)
+cd frontend
+npm install
+npm run dev
 ```
 
-## Проверка работоспособности (grpcurl)
+**Фронтенд:** http://localhost:5173  
+**gRPC сервер:** http://localhost:5000
+
+## Проверка через grpcurl
 
 ```bash
-# Установка grpcurl
 brew install grpcurl
 
-# Список сервисов
 grpcurl -plaintext -proto Proto/TaskManagement/TaskManagement.proto \
   localhost:5000 list
 
-# Регистрация пользователя
 grpcurl -plaintext -proto Proto/TaskManagement/TaskManagement.proto \
-  -d '{"username":"user","email":"user@test.com","password":"pass123","role":3}' \
+  -d '{"username":"user","email":"user@test.com","password":"123456","role":3}' \
   localhost:5000 taskmanagement.AuthService/Register
-
-# Логин
-grpcurl -plaintext -proto Proto/TaskManagement/TaskManagement.proto \
-  -d '{"email":"user@test.com","password":"pass123"}' \
-  localhost:5000 taskmanagement.AuthService/Login
 ```
 
-> Флаг `-plaintext` обязателен, т.к. сервер работает без TLS.
+## Сервисы
 
-## Сервисы gRPC
+| Сервис | Методы |
+|--------|--------|
+| `AuthService` | Register, Login |
+| `UserService` | GetUser, ListUsers |
+| `ProjectService` | CreateProject, GetProject, ListProjects, AddMember, RemoveMember |
+| `TaskService` | CreateTask, GetTask, ListTasks, AssignTask, ChangeStatus |
+| `CommentService` | CreateComment, ListComments |
+| `HistoryService` | GetHistory |
 
-| Сервис | Методы | Назначение |
-|--------|--------|------------|
-| `AuthService` | `Register`, `Login` | Регистрация и аутентификация |
-| `UserService` | `GetUser`, `ListUsers` | Пользователи |
-| `ProjectService` | `CreateProject`, `GetProject`, `ListProjects`, `AddMember`, `RemoveMember` | Проекты и участники |
-| `TaskService` | `CreateTask`, `GetTask`, `ListTasks`, `AssignTask`, `ChangeStatus` | Задачи |
-| `CommentService` | `CreateComment`, `ListComments` | Комментарии к задачам |
-| `HistoryService` | `GetHistory` | История изменений статуса задачи |
-
-## Структура проекта
+## Структура
 
 ```
-Proto/              # gRPC-контракты (.proto)
-Models/             # EF Core сущности (User, Project, TaskItem, Comment, TaskHistory)
-Application/
-├── Interfaces/     # Cервисные интерфейсы (IAuthService, IUserService, ...)
-└── Services/       # Реализация бизнес-логики
-Infrastructure/
-├── Program.cs      # Точка входа, DI, конфигурация
-└── Services/       # gRPC-обработчики (AuthServiceHandler, ...)
+Proto/              # gRPC-контракты
+Models/             # EF Core сущности
+Application/        # Бизнес-логика (Interfaces + Services)
+Infrastructure/     # Program.cs + gRPC-обработчики
+frontend/           # React + TypeScript (Vite)
 ```
-
-## Технологии
-
-- **.NET 9** — ASP.NET Core + gRPC
-- **PostgreSQL** + **Npgsql** — база данных
-- **Entity Framework Core 9** — ORM
-- **Protobuf** — контракты
-- **BCrypt** — хеширование паролей
