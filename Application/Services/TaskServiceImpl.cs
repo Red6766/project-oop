@@ -75,10 +75,10 @@ namespace TaskManagement.Application.Services
             _db.TaskHistories.Add(new TaskHistory
             {
                 TaskId = taskId,
-                OldStatus = oldStatus.ToString(),
-                NewStatus = status.ToString(),
-                ChangedBy = actorId.ToString(),
-                Timestamp = System.DateTime.UtcNow
+                OldStatus = oldStatus,
+                NewStatus = status,
+                ChangedById = actorId,
+                CreatedAt = System.DateTime.UtcNow
             });
 
             await _db.SaveChangesAsync(cancellationToken);
