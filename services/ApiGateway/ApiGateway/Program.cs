@@ -90,5 +90,6 @@ app.MapPost("/api/tasks/{taskId}/status", async (int taskId, ChangeTaskStatusReq
     })
     .RequireAuthorization();
 
+
 app.MapGet("/health", () => "OK");
 app.Run();
