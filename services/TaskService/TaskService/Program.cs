@@ -8,7 +8,7 @@ b.Services.AddGrpc();
 b.Services.AddDbContext<TaskDb>(o=>o.UseNpgsql(b.Configuration.GetConnectionString("DefaultConnection")));
 b.Services.AddScoped<TaskLogic>();
 var app=b.Build();
-using(var s=app.Services.CreateScope()){s.ServiceProvider.GetRequiredService<TaskDb>().Database.EnsureCreated();}
+using(var s=app.Services.CreateScope()){await s.ServiceProvider.GetRequiredService<TaskDb>().Database.MigrateAsync();}
 app.MapGrpcService<TaskHandler>();
 app.Run();
 
@@ -18,9 +18,9 @@ public class TaskLogic{
     readonly TaskDb _db;public TaskLogic(TaskDb db)=>_db=db;
     public async Task<TaskItem> Create(string t,string d,int pid,int prio,int uid,CancellationToken ct){var ti=new TaskItem{Title=t,Description=d,ProjectId=pid,Priority=prio,CreatedById=uid,Status=1};_db.Tasks.Add(ti);await _db.SaveChangesAsync(ct);return ti;}
     public async Task<List<TaskItem>> List(int pid,CancellationToken ct)=>await _db.Tasks.Where(t=>t.ProjectId==pid).OrderByDescending(t=>t.CreatedAt).ToListAsync(ct);
-    public async Task<TaskItem> ChangeStatus(int tid,int st,int aid,CancellationToken ct){var t=await _db.Tasks.FirstOrDefaultAsync(x=>x.Id==tid,ct)??throw new RpcException(new Status(StatusCode.NotFound,"Task not found"));t.Status=st;await _db.SaveChangesAsync(ct);return t;}
+    public async Task<TaskItem> ChangeStatus(int tid,int st,int aid,CancellationToken ct){var t=await _db.Tasks.FirstOrDefaultAsync(x=>x.Id==tid,ct)??throw new RpcException(new Status(StatusCode.NotFound,"Task not found"));if(st!=t.Status+1)throw new RpcException(new Status(StatusCode.InvalidArgument,"Task can only move to the next status"));t.Status=st;await _db.SaveChangesAsync(ct);return t;}
 }
-public class TaskHandler:TaskService.TaskServiceBase{
+public class TaskHandler:TaskManagement.Grpc.TaskService.TaskServiceBase{
     readonly TaskLogic _svc;public TaskHandler(TaskLogic svc)=>_svc=svc;
     public override async Task<TaskResponse> CreateTask(CreateTaskRequest r,ServerCallContext ctx){var t=await _svc.Create(r.Title,r.Description,r.ProjectId,(int)r.Priority,r.CreatedById,ctx.CancellationToken);return ToProto(t);}
     public override async Task<ListTasksResponse> ListTasks(ListTasksRequest r,ServerCallContext ctx){var l=await _svc.List(r.ProjectId,ctx.CancellationToken);var resp=new ListTasksResponse();foreach(var t in l)resp.Tasks.Add(ToProto(t));return resp;}
