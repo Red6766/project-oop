@@ -39,6 +39,7 @@ export function TasksPage({ projectId, userId, onBack }: Props) {
   const [priority, setPriority] = useState(2);
   const [modalTask, setModalTask] = useState<TaskRes | null>(null);
   const [createError, setCreateError] = useState("");
+  const [statusError, setStatusError] = useState("");
 
   const load = () => taskApi.list(projectId).then(setTasks);
   useEffect(() => { load(); }, []);
@@ -49,10 +50,27 @@ export function TasksPage({ projectId, userId, onBack }: Props) {
     catch (e: unknown) { setCreateError(e instanceof Error ? e.message : "Failed"); }
   };
 
-  const changeStatus = (taskId: number, status: number) => taskApi.changeStatus(taskId, { status, actorId: userId }).then(load);
+  const changeStatus = async (taskId: number, status: number) => {
+    try {
+      setStatusError("");
+      await taskApi.changeStatus(taskId, { status, actorId: userId });
+      await load();
+    } catch (error: unknown) {
+      setStatusError(error instanceof Error ? error.message : "Failed to change status");
+    }
+  };
 
   const onDragStart = (e: React.DragEvent, taskId: number) => { e.dataTransfer.setData("text/plain", String(taskId)); };
-  const onDrop = (e: React.DragEvent, newStatus: number) => { e.preventDefault(); changeStatus(Number(e.dataTransfer.getData("text/plain")), newStatus); };
+  const onDrop = (e: React.DragEvent, newStatus: number) => {
+    e.preventDefault();
+    const taskId = Number(e.dataTransfer.getData("text/plain"));
+    const task = tasks.find(item => item.id === taskId);
+    if (!task || newStatus !== task.status + 1) {
+      setStatusError("Tasks can only move to the next status");
+      return;
+    }
+    changeStatus(taskId, newStatus);
+  };
 
   return (
     <div style={{ padding: 24 }}>
@@ -70,6 +88,7 @@ export function TasksPage({ projectId, userId, onBack }: Props) {
         <button onClick={create} style={btn}>Create</button>
       </div>
       {createError && <p style={{ color: "red", fontSize: 14, marginBottom: 12 }}>{createError}</p>}
+      {statusError && <p style={{ color: "red", fontSize: 14, marginBottom: 12 }}>{statusError}</p>}
 
       <div style={{ display: "flex", gap: 16, overflowX: "auto" }}>
         {columns.map(col => (

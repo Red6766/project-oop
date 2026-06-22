@@ -12,8 +12,18 @@ function getSession(): { userId: number; username: string } | null {
   const token = localStorage.getItem("accessToken");
   if (!token) return null;
   try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return { userId: Number(payload.nameid || payload.sub || 0), username: payload.unique_name || payload.name || "" };
+    const encodedPayload = token.split(".")[1]
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+    const paddedPayload = encodedPayload.padEnd(Math.ceil(encodedPayload.length / 4) * 4, "=");
+    const payload = JSON.parse(atob(paddedPayload));
+    const userId = Number(payload.nameid || payload.sub || 0);
+
+    if (!payload.exp || payload.exp * 1000 <= Date.now() || userId <= 0) {
+      throw new Error("Session expired");
+    }
+
+    return { userId, username: payload.unique_name || payload.name || "" };
   } catch { localStorage.removeItem("accessToken"); return null; }
 }
 
