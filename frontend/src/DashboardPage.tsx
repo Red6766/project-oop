@@ -11,10 +11,10 @@ interface Props {
 }
 
 const columns = [
-  { key: 1, title: "To Do", color: "#dba5a5" },
-  { key: 2, title: "In Progress", color: "#dbc09e" },
-  { key: 3, title: "Review", color: "#a5b8db" },
-  { key: 4, title: "Done", color: "#9fc9a8" },
+  { key: 1, title: "To Do" },
+  { key: 2, title: "In Progress" },
+  { key: 3, title: "Review" },
+  { key: 4, title: "Done" },
 ];
 
 const priorityLabels: Record<number, string> = { 1: "Low", 2: "Medium", 3: "High", 4: "Critical" };
@@ -130,7 +130,7 @@ export function DashboardPage({ userId, onSelectProject, onProjects, onProfile, 
                 const projectNames = [...groups.keys()];
                 return (
                   <div key={col.key} onDragOver={e => e.preventDefault()} onDrop={e => onDrop(e, col.key)} style={{ minWidth: 280, flex: 1, background: "#f5f5f5", padding: 12 }}>
-                    <h3 style={{ margin: "0 0 12px", fontSize: 15, color: col.color, WebkitTextStroke: "0.4px #222", textShadow: "0 1px 2px rgba(0,0,0,0.06)" }}>{col.title} ({colTasks.length})</h3>
+                    <h3 style={{ margin: "0 0 12px", fontSize: 15, color: "#111" }}>{col.title} ({colTasks.length})</h3>
                     {projectNames.map(pname => {
                       const color = projectColorMap.get(pname)!;
                       return (
