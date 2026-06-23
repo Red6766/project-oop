@@ -83,6 +83,7 @@ message RegisterRequest {
   string email = 2;
   string password = 3;
   UserRole role = 4;
+  string special_key = 5;
 }
 
 message GetUserRequest {

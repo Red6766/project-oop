@@ -101,7 +101,12 @@ export function TasksPage({ projectId, userId, userRole, onBack, onDashboard, on
   const canAssign = canAssignTasks(userRole);
 
   const load = () => taskApi.list(projectId).then(setTasks);
-  useEffect(() => { load(); projectApi.get(projectId).then(setProject).catch(() => null); }, [projectId]);
+  const loadProject = async () => {
+    const loadedProject = await projectApi.get(projectId);
+    setProject(loadedProject);
+    return loadedProject;
+  };
+  useEffect(() => { load(); loadProject().catch(() => null); }, [projectId]);
   useEffect(() => {
     if (!canAssign) return;
     userApi.list().then(setUsers).catch(e => setStatusError(e instanceof Error ? e.message : "Failed to load users"));

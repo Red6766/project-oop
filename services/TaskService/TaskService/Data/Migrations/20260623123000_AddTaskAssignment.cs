@@ -1,6 +1,4 @@
 using System;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -8,8 +6,6 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TaskService.Data.Migrations
 {
     /// <inheritdoc />
-    [DbContext(typeof(TaskDb))]
-    [Migration("20260623123000_AddTaskAssignment")]
     public partial class AddTaskAssignment : Migration
     {
         /// <inheritdoc />

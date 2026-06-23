@@ -30,6 +30,7 @@ public class AuthHandler(AuthLogic auth, TokenService tokens) : TaskManagement.G
             request.Email,
             request.Password,
             (DomainUserRole)(int)request.Role,
+            request.SpecialKey,
             context.CancellationToken);
 
         return ToProto(user);

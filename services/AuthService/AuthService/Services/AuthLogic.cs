@@ -42,12 +42,13 @@ public class AuthLogic(AuthDbContext database)
         string email,
         string password,
         UserRole role,
+        string specialKey,
         CancellationToken cancellationToken)
     {
         username = username.Trim();
         email = email.Trim();
 
-        ValidateRegistration(username, email, password, role);
+        ValidateRegistration(username, email, password, role, specialKey);
 
         var normalizedUsername = username.ToUpperInvariant();
         var normalizedEmail = email.ToUpperInvariant();
@@ -93,7 +94,7 @@ public class AuthLogic(AuthDbContext database)
         return user;
     }
 
-    private static void ValidateRegistration(string username, string email, string password, UserRole role)
+    private static void ValidateRegistration(string username, string email, string password, UserRole role, string specialKey)
     {
         if (username.Length is < 3 or > 100)
             throw InvalidArgument("Username must contain from 3 to 100 characters");
@@ -104,10 +105,21 @@ public class AuthLogic(AuthDbContext database)
         if (password.Length < 6)
             throw InvalidArgument("Password must contain at least 6 characters");
 
-        if (role is not UserRole.Executor and not UserRole.Observer)
-            throw new RpcException(new Status(
-                StatusCode.PermissionDenied,
-                "Only Executor or Observer can be selected during registration"));
+        switch (role)
+        {
+            case UserRole.Admin when specialKey != "admin26":
+                throw new RpcException(new Status(StatusCode.PermissionDenied, "Admin special key is invalid"));
+            case UserRole.Manager when specialKey != "man26":
+                throw new RpcException(new Status(StatusCode.PermissionDenied, "Manager special key is invalid"));
+            case UserRole.Executor:
+            case UserRole.Observer:
+                break;
+            case UserRole.Admin:
+            case UserRole.Manager:
+                break;
+            default:
+                throw InvalidArgument("User role is invalid");
+        }
     }
 
     private static RpcException InvalidArgument(string message) =>

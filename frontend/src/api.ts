@@ -32,7 +32,7 @@ export type TaskRes = { id: number; title: string; description: string; projectI
 export type TaskWithProject = TaskRes & { projectName: string }
 
 export const authApi = {
-  register: (data: { username: string; email: string; password: string; role: number }) =>
+  register: (data: { username: string; email: string; password: string; role: number; specialKey?: string }) =>
     req<UserRes>("/auth/register", data),
   login: (data: { email: string; password: string }) =>
     req<{ token: string; user: UserRes }>("/auth/login", data),
