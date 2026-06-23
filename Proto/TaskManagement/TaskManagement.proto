@@ -15,6 +15,7 @@ service AuthService {
 service UserService {
   rpc GetUser (GetUserRequest) returns (UserResponse);
   rpc ListUsers (ListUsersRequest) returns (ListUsersResponse);
+  rpc AssignRole (AssignRoleRequest) returns (UserResponse);
 }
 
 service ProjectService {
@@ -97,6 +98,11 @@ message ListUsersResponse {
   repeated UserResponse users = 1;
 }
 
+message AssignRoleRequest {
+  int32 user_id = 1;
+  UserRole role = 2;
+}
+
 message CreateProjectRequest {
   string name = 1;
   string description = 2;
@@ -129,6 +135,7 @@ message CreateTaskRequest {
   int32 project_id = 3;
   int32 created_by_id = 4;
   TaskPriority priority = 5;
+  int32 assignee_id = 6;
 }
 
 message GetTaskRequest {

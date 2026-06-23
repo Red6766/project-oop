@@ -34,4 +34,5 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.MapGrpcService<AuthHandler>();
+app.MapGrpcService<UserHandler>();
 app.Run();

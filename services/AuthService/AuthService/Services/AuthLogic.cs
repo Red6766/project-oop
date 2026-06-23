@@ -8,6 +8,35 @@ namespace AuthService.Services;
 
 public class AuthLogic(AuthDbContext database)
 {
+    public async Task<User> GetUser(int id, CancellationToken cancellationToken)
+    {
+        return await database.Users.FirstOrDefaultAsync(user => user.Id == id, cancellationToken)
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "User not found"));
+    }
+
+    public async Task<List<User>> ListUsers(int pageSize, int pageToken, CancellationToken cancellationToken)
+    {
+        var take = pageSize is > 0 and <= 100 ? pageSize : 100;
+        var skip = Math.Max(0, pageToken);
+
+        return await database.Users
+            .OrderBy(user => user.Username)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<User> AssignRole(int userId, UserRole role, CancellationToken cancellationToken)
+    {
+        if (role is not UserRole.Admin and not UserRole.Manager and not UserRole.Executor and not UserRole.Observer)
+            throw InvalidArgument("User role is invalid");
+
+        var user = await GetUser(userId, cancellationToken);
+        user.Role = role;
+        await database.SaveChangesAsync(cancellationToken);
+        return user;
+    }
+
     public async Task<User> Register(
         string username,
         string email,
