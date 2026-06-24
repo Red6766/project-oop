@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { authApi, setAccessToken } from "./api";
 
-const DEFAULT_ROLE = 3;
-
 interface Props { onLogin: (userId: number, username: string) => void }
 
 export function LoginPage({ onLogin }: Props) {
@@ -28,7 +26,7 @@ export function LoginPage({ onLogin }: Props) {
       if (!username.trim() || !email.trim() || !password.trim()) { setError("All fields are required"); return; }
       if (!email.includes("@")) { setError("Email must contain @"); return; }
       if (username.includes("@")) { setError("Username cannot contain @"); return; }
-      await authApi.register({ username, email, password, role: DEFAULT_ROLE });
+      await authApi.register({ username, email, password });
       const { token, user } = await authApi.login({ email, password });
       setAccessToken(token);
       onLogin(user.id, user.username);

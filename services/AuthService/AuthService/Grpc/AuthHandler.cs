@@ -3,7 +3,6 @@ using AuthService.Services;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using TaskManagement.Grpc;
-using ProtoUserRole = TaskManagement.Grpc.UserRole;
 
 namespace AuthService.Grpc;
 
@@ -37,7 +36,6 @@ public class AuthHandler(AuthLogic auth, TokenService tokens) : TaskManagement.G
     {
         Id = user.Id,
         Username = user.Username,
-        Email = user.Email,
-        Role = (ProtoUserRole)(int)user.Role
+        Email = user.Email
     };
 }

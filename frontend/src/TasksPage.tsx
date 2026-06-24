@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { projectApi, taskApi, userApi } from "./api";
 import type { ProjectRes, TaskRes, UserRes } from "./api";
 
-interface Props { projectId: number; userId: number; userRole: string; onBack: () => void; onDashboard?: () => void; onProjects?: () => void; onProfile?: () => void; onLogout?: () => void }
+interface Props { projectId: number; userId: number; onBack: () => void; onDashboard?: () => void; onProjects?: () => void; onProfile?: () => void; onLogout?: () => void }
 
 const columns = [
   { key: 1, title: "To Do" },
@@ -13,8 +13,6 @@ const columns = [
 
 const priorityLabels: Record<number, string> = { 1: "Low", 2: "Medium", 3: "High", 4: "Critical" };
 const priorityColors: Record<number, string> = { 1: "#d4d4d4", 2: "#c0c0c0", 3: "#a8a8a8", 4: "#888888" };
-
-const canAssignTasks = (role: string) => role === "Admin";
 
 function userName(users: UserRes[], userId: number) {
   if (!userId) return "Unassigned";
@@ -91,7 +89,7 @@ function CreateTaskModal({
   );
 }
 
-export function TasksPage({ projectId, userId, userRole, onBack, onDashboard, onProjects, onProfile, onLogout }: Props) {
+export function TasksPage({ projectId, userId, onBack, onDashboard, onProjects, onProfile, onLogout }: Props) {
   const [tasks, setTasks] = useState<TaskRes[]>([]);
   const [project, setProject] = useState<ProjectRes | null>(null);
   const [users, setUsers] = useState<UserRes[]>([]);
@@ -101,7 +99,6 @@ export function TasksPage({ projectId, userId, userRole, onBack, onDashboard, on
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; task: TaskRes } | null>(null);
   const [membersProject, setMembersProject] = useState<ProjectRes | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const canAssign = canAssignTasks(userRole);
 
   useEffect(() => {
     if (!ctxMenu) return;
@@ -161,7 +158,7 @@ export function TasksPage({ projectId, userId, userRole, onBack, onDashboard, on
   return (
     <div>
       {detailTask && <TaskDetailModal task={detailTask} users={users} onClose={() => setDetailTask(null)} />}
-      {showCreate && <CreateTaskModal users={users} project={project} canAssign={canAssign} onClose={() => setShowCreate(false)} onCreate={handleCreate} />}
+      {showCreate && <CreateTaskModal users={users} project={project} canAssign={true} onClose={() => setShowCreate(false)} onCreate={handleCreate} />}
 
       {/* Navigation */}
       <div style={{ padding: "24px 24px 16px", borderBottom: "1px solid #eee" }}>
@@ -261,17 +258,15 @@ export function TasksPage({ projectId, userId, userRole, onBack, onDashboard, on
                   </div>
                   {t.description && <p style={{ margin: "4px 0 0", fontSize: 13, color: "#888" }}>{t.description}</p>}
                   <div style={{ marginTop: 8, fontSize: 12, color: "#777" }}>Assignee: <strong>{userName(users, t.assigneeId)}</strong></div>
-                  {canAssign && (
-                    <select
-                      value={t.assigneeId || 0}
-                      onClick={e => e.stopPropagation()}
-                      onChange={e => assignTask(t.id, Number(e.target.value))}
-                      style={{ width: "100%", marginTop: 8, padding: "6px 8px", border: "1px solid #ddd", fontSize: 13 }}
-                    >
-                      <option value={0} disabled>Assign to...</option>
-                      {users.filter(user => project?.memberIds.includes(user.id)).map(user => <option key={user.id} value={user.id}>{user.username}</option>)}
-                    </select>
-                  )}
+                  <select
+                    value={t.assigneeId || 0}
+                    onClick={e => e.stopPropagation()}
+                    onChange={e => assignTask(t.id, Number(e.target.value))}
+                    style={{ width: "100%", marginTop: 8, padding: "6px 8px", border: "1px solid #ddd", fontSize: 13 }}
+                  >
+                    <option value={0} disabled>Assign to...</option>
+                    {users.filter(user => project?.memberIds.includes(user.id)).map(user => <option key={user.id} value={user.id}>{user.username}</option>)}
+                  </select>
                 </div>
               ))}
             </div>

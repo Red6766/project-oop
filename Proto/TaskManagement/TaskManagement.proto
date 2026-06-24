@@ -15,7 +15,6 @@ service AuthService {
 service UserService {
   rpc GetUser (GetUserRequest) returns (UserResponse);
   rpc ListUsers (ListUsersRequest) returns (ListUsersResponse);
-  rpc AssignRole (AssignRoleRequest) returns (UserResponse);
 }
 
 service ProjectService {
@@ -88,11 +87,6 @@ message ListUsersResponse {
   repeated UserResponse users = 1;
 }
 
-message AssignRoleRequest {
-  int32 user_id = 1;
-  UserRole role = 2;
-}
-
 message CreateProjectRequest {
   string name = 1;
   string description = 2;
@@ -160,7 +154,6 @@ message UserResponse {
   int32 id = 1;
   string username = 2;
   string email = 3;
-  UserRole role = 4;
 }
 
 message ProjectResponse {

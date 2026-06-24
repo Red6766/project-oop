@@ -4,8 +4,6 @@ import type { ProjectRes, UserRes } from "./api";
 
 interface Props { userId: number; onSelectProject: (projectId: number) => void; onLogout: () => void; onProfile: () => void; onDashboard: () => void }
 
-const roleLabels: Record<number, string> = { 2: "Admin", 3: "Executor" };
-
 function MembersModal({
   project,
   users,
@@ -45,7 +43,7 @@ function MembersModal({
               <div key={user.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", padding: "8px 0", borderBottom: "1px solid #eee" }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600 }}>{user.username}</div>
-                  <div style={{ fontSize: 12, color: "#888" }}>{roleLabels[user.role] || "User"} · {user.email}</div>
+                  <div style={{ fontSize: 12, color: "#888" }}>{user.email}</div>
                 </div>
                 <button disabled={busyUserId === user.id} onClick={() => run(user.id, onRemove)} className="keycap-btn keycap-btn-ghost" style={{ padding: "4px 10px", fontSize: 12 }}>Remove</button>
               </div>
@@ -59,7 +57,7 @@ function MembersModal({
               <div key={user.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", padding: "8px 0", borderBottom: "1px solid #eee" }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600 }}>{user.username}</div>
-                  <div style={{ fontSize: 12, color: "#888" }}>{roleLabels[user.role] || "User"} · {user.email}</div>
+                  <div style={{ fontSize: 12, color: "#888" }}>{user.email}</div>
                 </div>
                 <button disabled={busyUserId === user.id} onClick={() => run(user.id, onAdd)} className="keycap-btn keycap-btn-outline" style={{ padding: "4px 10px", fontSize: 12 }}>Add</button>
               </div>

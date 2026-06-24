@@ -25,14 +25,14 @@ async function req<T>(url: string, body?: unknown, method?: string): Promise<T> 
   return r.json();
 }
 
-export type UserRes = { id: number; username: string; email: string; role: number }
+export type UserRes = { id: number; username: string; email: string }
 export type ProjectRes = { id: number; name: string; description: string; createdById: number; memberIds: number[] }
 export type TaskRes = { id: number; title: string; description: string; projectId: number; assigneeId: number; status: number; priority: number; createdById: number }
 
 export type TaskWithProject = TaskRes & { projectName: string }
 
 export const authApi = {
-  register: (data: { username: string; email: string; password: string; role: number }) =>
+  register: (data: { username: string; email: string; password: string }) =>
     req<UserRes>("/auth/register", data),
   login: (data: { email: string; password: string }) =>
     req<{ token: string; user: UserRes }>("/auth/login", data),

@@ -26,17 +26,6 @@ public class AuthLogic(AuthDbContext database)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<User> AssignRole(int userId, UserRole role, CancellationToken cancellationToken)
-    {
-        if (role is not UserRole.Admin and not UserRole.Executor)
-            throw InvalidArgument("User role is invalid");
-
-        var user = await GetUser(userId, cancellationToken);
-        user.Role = role;
-        await database.SaveChangesAsync(cancellationToken);
-        return user;
-    }
-
     public async Task<User> Register(
         string username,
         string email,

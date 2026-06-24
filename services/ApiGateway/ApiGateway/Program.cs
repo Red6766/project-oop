@@ -2,7 +2,6 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using TaskManagement.Grpc;
@@ -78,39 +77,20 @@ app.MapPost("/api/auth/login", async (LoginRequest request) =>
 app.MapGet("/api/users", async () =>
     Results.Ok((await users.ListUsersAsync(new ListUsersRequest())).Users))
     .RequireAuthorization();
-app.MapPost("/api/users/{userId}/role", async (int userId, AssignRoleRequest request, ClaimsPrincipal principal) =>
-    {
-        EnsureRole(principal, "Admin");
-        request.UserId = userId;
-        return Results.Ok(await users.AssignRoleAsync(request));
-    })
-    .RequireAuthorization();
 
 app.MapGet("/api/projects", async (ClaimsPrincipal principal) =>
     {
-        var userId = IsRole(principal, "Admin") ? 0 : CurrentUserId(principal);
+        var userId = CurrentUserId(principal);
         return Results.Ok((await projects.ListProjectsAsync(new ListProjectsRequest { UserId = userId })).Projects);
     })
     .RequireAuthorization();
-app.MapPost("/api/projects", async (CreateProjectRequest request, ClaimsPrincipal principal, HttpContext context) =>
+app.MapPost("/api/projects", async (CreateProjectRequest request, ClaimsPrincipal principal) =>
     {
         var userId = CurrentUserId(principal);
         request.CreatedById = userId;
 
-        // Auto-promote creator to Admin + issue new token with updated role
-        if (!principal.IsInRole("Admin"))
-        {
-            await users.AssignRoleAsync(new AssignRoleRequest { UserId = userId, Role = UserRole.Admin });
-
-            var username = principal.FindFirstValue(ClaimTypes.Name) ?? principal.FindFirstValue("unique_name") ?? "";
-            var email = principal.FindFirstValue(ClaimTypes.Email) ?? principal.FindFirstValue("email") ?? "";
-            var newToken = GenerateToken(userId, username, email, "Admin");
-            context.Response.Headers.Append("X-New-Token", newToken);
-        }
-
         var project = await projects.CreateProjectAsync(request);
 
-        // Add creator as project member
         await projects.AddMemberAsync(new AddProjectMemberRequest { ProjectId = project.Id, UserId = userId });
 
         return Results.Ok(project);
@@ -118,16 +98,14 @@ app.MapPost("/api/projects", async (CreateProjectRequest request, ClaimsPrincipa
     .RequireAuthorization();
 app.MapPost("/api/projects/{projectId}/members/{userId}", async (int projectId, int userId, ClaimsPrincipal principal) =>
     {
-        EnsureRole(principal, "Admin");
-        await EnsureProjectAccess(projectId, principal);
+        await EnsureProjectAdmin(projectId, principal);
         await users.GetUserAsync(new GetUserRequest { Id = userId });
         return Results.Ok(await projects.AddMemberAsync(new AddProjectMemberRequest { ProjectId = projectId, UserId = userId }));
     })
     .RequireAuthorization();
 app.MapDelete("/api/projects/{projectId}/members/{userId}", async (int projectId, int userId, ClaimsPrincipal principal) =>
     {
-        EnsureRole(principal, "Admin");
-        await EnsureProjectAccess(projectId, principal);
+        await EnsureProjectAdmin(projectId, principal);
         await projects.RemoveMemberAsync(new RemoveProjectMemberRequest { ProjectId = projectId, UserId = userId });
         return Results.NoContent();
     })
@@ -147,15 +125,11 @@ app.MapGet("/api/projects/{projectId}/tasks", async (int projectId, ClaimsPrinci
     .RequireAuthorization();
 app.MapPost("/api/tasks", async (CreateTaskRequest request, ClaimsPrincipal principal) =>
     {
-        EnsureRole(principal, "Admin", "Executor");
         var currentUserId = CurrentUserId(principal);
         var project = await EnsureProjectAccess(request.ProjectId, principal);
 
         request.CreatedById = currentUserId;
-        if (IsRole(principal, "Executor"))
-        {
-            request.AssigneeId = currentUserId;
-        }
+        request.AssigneeId = currentUserId;
 
         if (request.AssigneeId > 0 && !project.MemberIds.Contains(request.AssigneeId))
             throw new RpcException(new Status(StatusCode.InvalidArgument, "Assignee must be a project member"));
@@ -165,7 +139,7 @@ app.MapPost("/api/tasks", async (CreateTaskRequest request, ClaimsPrincipal prin
     .RequireAuthorization();
 app.MapPost("/api/tasks/{taskId}/assignee", async (int taskId, AssignTaskRequest request, ClaimsPrincipal principal) =>
     {
-        EnsureRole(principal, "Admin");
+        await EnsureProjectAdminByTask(taskId, principal);
         var task = await tasks.GetTaskAsync(new GetTaskRequest { Id = taskId });
         var project = await EnsureProjectAccess(task.ProjectId, principal);
         if (!project.MemberIds.Contains(request.AssigneeId))
@@ -185,12 +159,12 @@ app.MapDelete("/api/tasks/{taskId}", async (int taskId, ClaimsPrincipal principa
     .RequireAuthorization();
 app.MapPost("/api/tasks/{taskId}/status", async (int taskId, ChangeTaskStatusRequest request, ClaimsPrincipal principal) =>
     {
-        EnsureRole(principal, "Admin", "Executor");
         var currentUserId = CurrentUserId(principal);
         var task = await tasks.GetTaskAsync(new GetTaskRequest { Id = taskId });
-        await EnsureProjectAccess(task.ProjectId, principal);
-        if (IsRole(principal, "Executor") && task.AssigneeId != currentUserId)
-            throw new RpcException(new Status(StatusCode.PermissionDenied, "Executor can change only assigned tasks"));
+        var project = await EnsureProjectAccess(task.ProjectId, principal);
+
+        if (task.AssigneeId != currentUserId && !project.AdminIds.Contains(currentUserId))
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "Only assignee or project admin can change status"));
 
         request.TaskId = taskId;
         return Results.Ok(await tasks.ChangeStatusAsync(request));
@@ -212,48 +186,24 @@ int CurrentUserId(ClaimsPrincipal principal)
     return userId;
 }
 
-bool IsRole(ClaimsPrincipal principal, string role) => principal.IsInRole(role);
-
-void EnsureRole(ClaimsPrincipal principal, params string[] roles)
-{
-    if (roles.Any(role => principal.IsInRole(role)))
-        return;
-
-    throw new RpcException(new Status(StatusCode.PermissionDenied, "Insufficient permissions"));
-}
-
-string GenerateToken(int userId, string username, string email, string role)
-{
-    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-        builder.Configuration["Jwt:Key"]
-        ?? throw new InvalidOperationException("Jwt:Key is missing")));
-    var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-    var lifetime = int.TryParse(builder.Configuration["Jwt:LifetimeMinutes"], out var m) ? m : 60;
-
-    var claims = new[]
-    {
-        new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-        new Claim(ClaimTypes.Name, username),
-        new Claim(ClaimTypes.Email, email),
-        new Claim(ClaimTypes.Role, role),
-        new Claim("unique_name", username),
-    };
-
-    var token = new JwtSecurityToken(
-        issuer: builder.Configuration["Jwt:Issuer"],
-        audience: builder.Configuration["Jwt:Audience"],
-        claims: claims,
-        expires: DateTime.UtcNow.AddMinutes(lifetime),
-        signingCredentials: credentials);
-
-    return new JwtSecurityTokenHandler().WriteToken(token);
-}
-
 async Task<ProjectResponse> EnsureProjectAccess(int projectId, ClaimsPrincipal principal)
 {
     var project = await projects.GetProjectAsync(new GetProjectRequest { Id = projectId });
-    if (IsRole(principal, "Admin") || project.MemberIds.Contains(CurrentUserId(principal)))
+    if (project.MemberIds.Contains(CurrentUserId(principal)))
         return project;
 
     throw new RpcException(new Status(StatusCode.PermissionDenied, "Project access denied"));
+}
+
+async Task EnsureProjectAdmin(int projectId, ClaimsPrincipal principal)
+{
+    var project = await projects.GetProjectAsync(new GetProjectRequest { Id = projectId });
+    if (!project.AdminIds.Contains(CurrentUserId(principal)))
+        throw new RpcException(new Status(StatusCode.PermissionDenied, "Insufficient permissions"));
+}
+
+async Task EnsureProjectAdminByTask(int taskId, ClaimsPrincipal principal)
+{
+    var task = await tasks.GetTaskAsync(new GetTaskRequest { Id = taskId });
+    await EnsureProjectAdmin(task.ProjectId, principal);
 }
