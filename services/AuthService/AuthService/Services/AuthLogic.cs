@@ -41,14 +41,12 @@ public class AuthLogic(AuthDbContext database)
         string username,
         string email,
         string password,
-        UserRole role,
-        string specialKey,
         CancellationToken cancellationToken)
     {
         username = username.Trim();
         email = email.Trim();
 
-        ValidateRegistration(username, email, password, role, specialKey);
+        ValidateRegistration(username, email, password);
 
         var normalizedUsername = username.ToUpperInvariant();
         var normalizedEmail = email.ToUpperInvariant();
@@ -70,7 +68,7 @@ public class AuthLogic(AuthDbContext database)
             Email = email.ToLowerInvariant(),
             NormalizedEmail = normalizedEmail,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-            Role = role
+            Role = UserRole.Executor
         };
 
         database.Users.Add(user);
@@ -94,7 +92,7 @@ public class AuthLogic(AuthDbContext database)
         return user;
     }
 
-    private static void ValidateRegistration(string username, string email, string password, UserRole role, string specialKey)
+    private static void ValidateRegistration(string username, string email, string password)
     {
         if (username.Length is < 3 or > 100)
             throw InvalidArgument("Username must contain from 3 to 100 characters");
@@ -104,18 +102,6 @@ public class AuthLogic(AuthDbContext database)
 
         if (password.Length < 6)
             throw InvalidArgument("Password must contain at least 6 characters");
-
-        switch (role)
-        {
-            case UserRole.Admin when specialKey != "admin26":
-                throw new RpcException(new Status(StatusCode.PermissionDenied, "Admin special key is invalid"));
-            case UserRole.Executor:
-                break;
-            case UserRole.Admin:
-                break;
-            default:
-                throw InvalidArgument("User role is invalid");
-        }
     }
 
     private static RpcException InvalidArgument(string message) =>

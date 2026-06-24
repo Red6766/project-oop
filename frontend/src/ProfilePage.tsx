@@ -1,4 +1,4 @@
-interface Props { userId: number; username: string; email: string; onBack: () => void; onLogout: () => void; onDashboard?: () => void; onProjects?: () => void }
+interface Props { username: string; email: string; onBack: () => void; onLogout: () => void; onDashboard?: () => void; onProjects?: () => void }
 
 export function ProfilePage({ username, email, onBack, onLogout, onDashboard, onProjects }: Props) {
   return (
@@ -11,7 +11,7 @@ export function ProfilePage({ username, email, onBack, onLogout, onDashboard, on
             {onProjects && <button onClick={onProjects} className="keycap-btn keycap-btn-outline">My Projects</button>}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => {}} className="keycap-btn keycap-btn-solid">Profile</button>
+            <button className="keycap-btn keycap-btn-solid" style={{ cursor: "default" }}>Profile</button>
             <button onClick={onLogout} className="keycap-btn keycap-btn-ghost">Logout</button>
           </div>
         </div>

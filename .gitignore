@@ -10,6 +10,7 @@ obj/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/src/gen/
 .lsp/
 .clj-kondo/
 *.env

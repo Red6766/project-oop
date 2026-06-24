@@ -73,7 +73,7 @@ export function DashboardPage({ userId, onSelectProject, onProjects, onProfile, 
   const changeStatus = async (taskId: number, status: number) => {
     try {
       setStatusError("");
-      await taskApi.changeStatus(taskId, { status, actorId: userId });
+      await taskApi.changeStatus(taskId, { status });
       await load();
     } catch (error: unknown) {
       setStatusError(error instanceof Error ? error.message : "Failed to change status");
@@ -98,7 +98,7 @@ export function DashboardPage({ userId, onSelectProject, onProjects, onProfile, 
       <div style={{ padding: "24px 24px 16px", borderBottom: "1px solid #eee" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => {}} className="keycap-btn keycap-btn-solid">Home</button>
+            <button className="keycap-btn keycap-btn-solid" style={{ cursor: "default" }}>Home</button>
             <button onClick={onProjects} className="keycap-btn keycap-btn-outline">My Projects</button>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
@@ -161,7 +161,7 @@ export function DashboardPage({ userId, onSelectProject, onProjects, onProfile, 
                           {!isCollapsed && groups.get(pname)!.map(t => {
                             const isExpanded = expandedTasks.has(t.id);
                             return (
-                              <div key={t.id} className="task-card-enter" style={{ animation: "fadeSlideIn 0.2s ease" }}>
+                              <div key={t.id} style={{ animation: "fadeSlideIn 0.2s ease" }}>
                                 <div
                                   draggable
                                   onDragStart={e => onDragStart(e, t.id)}

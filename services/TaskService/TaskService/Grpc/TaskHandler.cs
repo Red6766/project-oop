@@ -64,7 +64,6 @@ public class TaskHandler(TaskLogic tasks) : TaskManagement.Grpc.TaskService.Task
         var task = await tasks.ChangeStatus(
             request.TaskId,
             (int)request.Status,
-            request.ActorId,
             context.CancellationToken);
 
         return ToProto(task);
@@ -88,7 +87,6 @@ public class TaskHandler(TaskLogic tasks) : TaskManagement.Grpc.TaskService.Task
         Status = (TaskManagement.Grpc.TaskStatus)task.Status,
         Priority = (TaskPriority)task.Priority,
         CreatedById = task.CreatedById,
-        CreatedAt = Timestamp.FromDateTime(DateTime.SpecifyKind(task.CreatedAt, DateTimeKind.Utc)),
-        UpdatedAt = Timestamp.FromDateTime(DateTime.SpecifyKind(task.UpdatedAt, DateTimeKind.Utc))
+        CreatedAt = Timestamp.FromDateTime(DateTime.SpecifyKind(task.CreatedAt, DateTimeKind.Utc))
     };
 }

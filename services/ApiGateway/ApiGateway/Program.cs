@@ -193,7 +193,6 @@ app.MapPost("/api/tasks/{taskId}/status", async (int taskId, ChangeTaskStatusReq
             throw new RpcException(new Status(StatusCode.PermissionDenied, "Executor can change only assigned tasks"));
 
         request.TaskId = taskId;
-        request.ActorId = currentUserId;
         return Results.Ok(await tasks.ChangeStatusAsync(request));
     })
     .RequireAuthorization();

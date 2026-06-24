@@ -23,13 +23,12 @@ namespace AuthService.Data.Migrations
                     Email = table.Column<string>(type: "character varying(320)", maxLength: 320, nullable: false),
                     NormalizedEmail = table.Column<string>(type: "character varying(320)", maxLength: 320, nullable: false),
                     PasswordHash = table.Column<string>(type: "text", nullable: false),
-                    Role = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    Role = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
-                    table.CheckConstraint("CK_Users_Role", "\"Role\" BETWEEN 1 AND 4");
+                    table.CheckConstraint("CK_Users_Role", "\"Role\" IN (2, 3)");
                     table.CheckConstraint("CK_Users_Username_NotEmpty", "length(trim(\"Username\")) >= 3");
                 });
 

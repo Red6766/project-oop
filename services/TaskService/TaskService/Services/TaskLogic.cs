@@ -7,6 +7,8 @@ namespace TaskService.Services;
 
 public class TaskLogic(TaskDbContext database)
 {
+    private const int StatusTodo = 1;
+
     public async Task<TaskItem> Create(
         string title,
         string description,
@@ -20,18 +22,19 @@ public class TaskLogic(TaskDbContext database)
         if (string.IsNullOrWhiteSpace(title))
             throw InvalidArgument("Task title is required");
 
-        var now = DateTime.UtcNow;
+        if (assigneeId <= 0)
+            throw InvalidArgument("Assignee id is required");
+
         var task = new TaskItem
         {
             Title = title,
-            Description = description.Trim(),
+            Description = description?.Trim() ?? string.Empty,
             ProjectId = projectId,
             Priority = priority,
             CreatedById = userId,
             AssigneeId = assigneeId,
-            Status = 1,
-            CreatedAt = now,
-            UpdatedAt = now
+            Status = StatusTodo,
+            CreatedAt = DateTime.UtcNow
         };
 
         database.Tasks.Add(task);
@@ -67,7 +70,6 @@ public class TaskLogic(TaskDbContext database)
 
         var task = await Get(taskId, cancellationToken);
         task.AssigneeId = assigneeId;
-        task.UpdatedAt = DateTime.UtcNow;
         await database.SaveChangesAsync(cancellationToken);
         return task;
     }
@@ -75,7 +77,6 @@ public class TaskLogic(TaskDbContext database)
     public async Task<TaskItem> ChangeStatus(
         int taskId,
         int status,
-        int actorId,
         CancellationToken cancellationToken)
     {
         var task = await Get(taskId, cancellationToken);
@@ -83,7 +84,6 @@ public class TaskLogic(TaskDbContext database)
             throw InvalidArgument("Task can only move to the next status");
 
         task.Status = status;
-        task.UpdatedAt = DateTime.UtcNow;
         await database.SaveChangesAsync(cancellationToken);
         return task;
     }

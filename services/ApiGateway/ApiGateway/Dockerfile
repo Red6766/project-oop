@@ -1,8 +1,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 COPY services/ApiGateway/ApiGateway/ApiGateway.csproj services/ApiGateway/ApiGateway/
+COPY Proto/TaskManagement/TaskManagement.proto Proto/TaskManagement/
 RUN dotnet restore services/ApiGateway/ApiGateway/ApiGateway.csproj
-COPY . .
+COPY services/ApiGateway/ApiGateway/ services/ApiGateway/ApiGateway/
 RUN dotnet publish services/ApiGateway/ApiGateway/ApiGateway.csproj -c Release -o /app
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0

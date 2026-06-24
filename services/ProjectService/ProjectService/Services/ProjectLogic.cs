@@ -82,9 +82,15 @@ public class ProjectLogic(ProjectDbContext database)
         int userId,
         CancellationToken cancellationToken)
     {
-        var member = await database.ProjectMembers.FirstOrDefaultAsync(
-            candidate => candidate.ProjectId == projectId && candidate.UserId == userId,
-            cancellationToken)
+        var project = await database.Projects
+            .Include(candidate => candidate.Members)
+            .FirstOrDefaultAsync(candidate => candidate.Id == projectId, cancellationToken)
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "Project not found"));
+
+        if (project.CreatedById == userId)
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "Cannot remove the project creator"));
+
+        var member = project.Members.FirstOrDefault(candidate => candidate.UserId == userId)
             ?? throw new RpcException(new Status(StatusCode.NotFound, "Project member not found"));
 
         database.ProjectMembers.Remove(member);

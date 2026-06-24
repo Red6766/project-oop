@@ -14,7 +14,7 @@ const columns = [
 const priorityLabels: Record<number, string> = { 1: "Low", 2: "Medium", 3: "High", 4: "Critical" };
 const priorityColors: Record<number, string> = { 1: "#d4d4d4", 2: "#c0c0c0", 3: "#a8a8a8", 4: "#888888" };
 
-const canAssignTasks = (role: string) => role === "Admin" || role === "Manager";
+const canAssignTasks = (role: string) => role === "Admin";
 
 function userName(users: UserRes[], userId: number) {
   if (!userId) return "Unassigned";
@@ -139,7 +139,7 @@ export function TasksPage({ projectId, userId, userRole, onBack, onDashboard, on
   const changeStatus = async (taskId: number, status: number) => {
     try {
       setStatusError("");
-      await taskApi.changeStatus(taskId, { status, actorId: userId });
+      await taskApi.changeStatus(taskId, { status });
       await load();
     } catch (error: unknown) {
       setStatusError(error instanceof Error ? error.message : "Failed to change status");

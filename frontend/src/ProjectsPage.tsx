@@ -176,7 +176,7 @@ export function ProjectsPage({ userId, onSelectProject, onLogout, onProfile, onD
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={onDashboard} className="keycap-btn keycap-btn-outline">Home</button>
-            <button onClick={() => {}} className="keycap-btn keycap-btn-solid">My Projects</button>
+            <button className="keycap-btn keycap-btn-solid" style={{ cursor: "default" }}>My Projects</button>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={onProfile} className="keycap-btn keycap-btn-outline">Profile</button>

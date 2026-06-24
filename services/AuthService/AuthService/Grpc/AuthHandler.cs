@@ -3,7 +3,6 @@ using AuthService.Services;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using TaskManagement.Grpc;
-using DomainUserRole = AuthService.Models.UserRole;
 using ProtoUserRole = TaskManagement.Grpc.UserRole;
 
 namespace AuthService.Grpc;
@@ -29,8 +28,6 @@ public class AuthHandler(AuthLogic auth, TokenService tokens) : TaskManagement.G
             request.Username,
             request.Email,
             request.Password,
-            (DomainUserRole)(int)request.Role,
-            request.SpecialKey,
             context.CancellationToken);
 
         return ToProto(user);
