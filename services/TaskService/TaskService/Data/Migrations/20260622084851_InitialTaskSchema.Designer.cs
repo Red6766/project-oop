@@ -10,7 +10,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace TaskService.Data.Migrations
 {
-    [DbContext(typeof(TaskDb))]
+    [DbContext(typeof(TaskDbContext))]
     [Migration("20260622084851_InitialTaskSchema")]
     partial class InitialTaskSchema
     {
