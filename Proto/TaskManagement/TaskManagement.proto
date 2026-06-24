@@ -196,6 +196,7 @@ message ProjectResponse {
   string description = 3;
   int32 created_by_id = 4;
   repeated int32 member_ids = 5;
+  repeated int32 admin_ids = 6;
 }
 
 message TaskResponse {

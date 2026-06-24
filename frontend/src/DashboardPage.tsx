@@ -60,7 +60,7 @@ export function DashboardPage({ userId, onSelectProject, onProjects, onProfile, 
     setLoading(true);
     try {
       const all = await getAllTasks();
-      setTasks(all);
+      setTasks(all.filter(t => t.assigneeId === userId));
     } catch (e: unknown) {
       setStatusError(e instanceof Error ? e.message : "Failed to load tasks");
     } finally {

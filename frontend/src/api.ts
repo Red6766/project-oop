@@ -26,7 +26,7 @@ async function req<T>(url: string, body?: unknown, method?: string): Promise<T> 
 }
 
 export type UserRes = { id: number; username: string; email: string; role: number }
-export type ProjectRes = { id: number; name: string; description: string; createdById: number; memberIds: number[] }
+export type ProjectRes = { id: number; name: string; description: string; createdById: number; memberIds: number[]; adminIds: number[] }
 export type TaskRes = { id: number; title: string; description: string; projectId: number; assigneeId: number; status: number; priority: number; createdById: number }
 
 export type TaskWithProject = TaskRes & { projectName: string }
@@ -46,25 +46,8 @@ export const userApi = {
 
 export const projectApi = {
   list: () => req<ProjectRes[]>("/projects"),
-  create: async (data: { name: string; description: string; createdById: number }) => {
-    const r = await fetch(BASE + "/projects", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(localStorage.getItem("accessToken")
-          ? { Authorization: `Bearer ${localStorage.getItem("accessToken")}` }
-          : {}),
-      },
-      body: JSON.stringify(data),
-    });
-    if (!r.ok) {
-      const response = await r.json().catch(() => null) as { error?: string } | null;
-      throw new Error(response?.error || r.statusText);
-    }
-    const newToken = r.headers.get("X-New-Token");
-    if (newToken) localStorage.setItem("accessToken", newToken);
-    return r.json() as Promise<ProjectRes>;
-  },
+  create: (data: { name: string; description: string; createdById: number }) =>
+    req<ProjectRes>("/projects", data),
   get: async (projectId: number) => {
     const projects = await req<ProjectRes[]>("/projects");
     const project = projects.find(p => p.id === projectId);

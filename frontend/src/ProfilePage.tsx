@@ -1,6 +1,6 @@
-interface Props { userId: number; username: string; email: string; role: string; onBack: () => void; onLogout: () => void; onDashboard?: () => void; onProjects?: () => void }
+interface Props { userId: number; username: string; email: string; onBack: () => void; onLogout: () => void; onDashboard?: () => void; onProjects?: () => void }
 
-export function ProfilePage({ username, email, role, onBack, onLogout, onDashboard, onProjects }: Props) {
+export function ProfilePage({ username, email, onBack, onLogout, onDashboard, onProjects }: Props) {
   return (
     <div>
       {/* Navigation — full width */}
@@ -31,10 +31,6 @@ export function ProfilePage({ username, email, role, onBack, onLogout, onDashboa
           <div style={{ marginBottom: 24, padding: "12px 16px", background: "#fff", border: "1px solid #e0e0e0" }}>
             <div style={{ fontSize: 12, color: "#999", marginBottom: 4 }}>EMAIL</div>
             <div style={{ fontSize: 16 }}>{email}</div>
-          </div>
-          <div style={{ marginBottom: 24, padding: "12px 16px", background: "#fff", border: "1px solid #e0e0e0" }}>
-            <div style={{ fontSize: 12, color: "#999", marginBottom: 4 }}>ROLE</div>
-            <div style={{ fontSize: 16 }}>{role || "Unknown"}</div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={onBack} className="keycap-btn keycap-btn-ghost" style={{ flex: 1 }}>← Back</button>
