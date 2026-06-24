@@ -18,12 +18,15 @@ using(var s=app.Services.CreateScope())
         CREATE TABLE IF NOT EXISTS "ProjectMembers" (
             "ProjectId" integer NOT NULL,
             "UserId" integer NOT NULL,
+            "Role" text NOT NULL DEFAULT 'member',
             CONSTRAINT "PK_ProjectMembers" PRIMARY KEY ("ProjectId", "UserId"),
             CONSTRAINT "FK_ProjectMembers_Projects_ProjectId" FOREIGN KEY ("ProjectId") REFERENCES "Projects" ("Id") ON DELETE CASCADE
         );
+        ALTER TABLE "ProjectMembers" ADD COLUMN IF NOT EXISTS "Role" text NOT NULL DEFAULT 'member';
         CREATE INDEX IF NOT EXISTS "IX_ProjectMembers_UserId" ON "ProjectMembers" ("UserId");
-        INSERT INTO "ProjectMembers" ("ProjectId", "UserId")
-        SELECT "Id", "CreatedById" FROM "Projects"
+        UPDATE "ProjectMembers" SET "Role" = 'admin' WHERE "Role" = 'member' AND ("ProjectId", "UserId") IN (SELECT "Id", "CreatedById" FROM "Projects" WHERE "CreatedById" > 0);
+        INSERT INTO "ProjectMembers" ("ProjectId", "UserId", "Role")
+        SELECT "Id", "CreatedById", 'admin' FROM "Projects"
         WHERE "CreatedById" > 0
         ON CONFLICT DO NOTHING;
         """);
@@ -70,6 +73,7 @@ public class ProjectMember
 {
     public int ProjectId{get;set;}
     public int UserId{get;set;}
+    public string Role{get;set;}="member";
     public Project Project{get;set;}=null!;
 }
 
@@ -85,7 +89,7 @@ public class ProjectLogic
         if(userId<=0)throw InvalidArgument("Project creator is required");
 
         var project=new Project{Name=name,Description=description.Trim(),CreatedById=userId};
-        project.Members.Add(new ProjectMember{UserId=userId});
+        project.Members.Add(new ProjectMember{UserId=userId,Role="admin"});
         _db.Projects.Add(project);
         await _db.SaveChangesAsync(ct);
         return project;
@@ -129,6 +133,15 @@ public class ProjectLogic
         await _db.SaveChangesAsync(ct);
     }
 
+    public async Task Delete(int id,CancellationToken ct)
+    {
+        var project=await _db.Projects.Include(p=>p.Members).FirstOrDefaultAsync(p=>p.Id==id,ct)
+            ?? throw new RpcException(new Status(StatusCode.NotFound,"Project not found"));
+
+        _db.Projects.Remove(project);
+        await _db.SaveChangesAsync(ct);
+    }
+
     static RpcException InvalidArgument(string message)=>new(new Status(StatusCode.InvalidArgument,message));
 }
 
@@ -169,10 +182,17 @@ public class ProjectHandler:ProjectService.ProjectServiceBase
         return new Empty();
     }
 
+    public override async Task<Empty> DeleteProject(DeleteProjectRequest r,ServerCallContext ctx)
+    {
+        await _svc.Delete(r.Id,ctx.CancellationToken);
+        return new Empty();
+    }
+
     static ProjectResponse ToProto(Project project)
     {
         var response=new ProjectResponse{Id=project.Id,Name=project.Name,Description=project.Description,CreatedById=project.CreatedById};
         response.MemberIds.AddRange(project.Members.Select(member=>member.UserId));
+        response.AdminIds.AddRange(project.Members.Where(m=>m.Role=="admin").Select(m=>m.UserId));
         return response;
     }
 }

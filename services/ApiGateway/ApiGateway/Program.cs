@@ -2,6 +2,7 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using TaskManagement.Grpc;
@@ -74,11 +75,8 @@ app.MapPost("/api/auth/register", async (RegisterRequest request) =>
 app.MapPost("/api/auth/login", async (LoginRequest request) =>
     Results.Ok(await auth.LoginAsync(request)));
 
-app.MapGet("/api/users", async (ClaimsPrincipal principal) =>
-    {
-        EnsureRole(principal, "Admin", "Manager");
-        return Results.Ok((await users.ListUsersAsync(new ListUsersRequest())).Users);
-    })
+app.MapGet("/api/users", async () =>
+    Results.Ok((await users.ListUsersAsync(new ListUsersRequest())).Users))
     .RequireAuthorization();
 app.MapPost("/api/users/{userId}/role", async (int userId, AssignRoleRequest request, ClaimsPrincipal principal) =>
     {
@@ -94,16 +92,33 @@ app.MapGet("/api/projects", async (ClaimsPrincipal principal) =>
         return Results.Ok((await projects.ListProjectsAsync(new ListProjectsRequest { UserId = userId })).Projects);
     })
     .RequireAuthorization();
-app.MapPost("/api/projects", async (CreateProjectRequest request, ClaimsPrincipal principal) =>
+app.MapPost("/api/projects", async (CreateProjectRequest request, ClaimsPrincipal principal, HttpContext context) =>
     {
-        EnsureRole(principal, "Admin", "Manager");
-        request.CreatedById = CurrentUserId(principal);
-        return Results.Ok(await projects.CreateProjectAsync(request));
+        var userId = CurrentUserId(principal);
+        request.CreatedById = userId;
+
+        // Auto-promote creator to Admin + issue new token with updated role
+        if (!principal.IsInRole("Admin"))
+        {
+            await users.AssignRoleAsync(new AssignRoleRequest { UserId = userId, Role = UserRole.Admin });
+
+            var username = principal.FindFirstValue(ClaimTypes.Name) ?? principal.FindFirstValue("unique_name") ?? "";
+            var email = principal.FindFirstValue(ClaimTypes.Email) ?? principal.FindFirstValue("email") ?? "";
+            var newToken = GenerateToken(userId, username, email, "Admin");
+            context.Response.Headers.Append("X-New-Token", newToken);
+        }
+
+        var project = await projects.CreateProjectAsync(request);
+
+        // Add creator as project member
+        await projects.AddMemberAsync(new AddProjectMemberRequest { ProjectId = project.Id, UserId = userId });
+
+        return Results.Ok(project);
     })
     .RequireAuthorization();
 app.MapPost("/api/projects/{projectId}/members/{userId}", async (int projectId, int userId, ClaimsPrincipal principal) =>
     {
-        EnsureRole(principal, "Admin", "Manager");
+        EnsureRole(principal, "Admin");
         await EnsureProjectAccess(projectId, principal);
         await users.GetUserAsync(new GetUserRequest { Id = userId });
         return Results.Ok(await projects.AddMemberAsync(new AddProjectMemberRequest { ProjectId = projectId, UserId = userId }));
@@ -111,9 +126,16 @@ app.MapPost("/api/projects/{projectId}/members/{userId}", async (int projectId, 
     .RequireAuthorization();
 app.MapDelete("/api/projects/{projectId}/members/{userId}", async (int projectId, int userId, ClaimsPrincipal principal) =>
     {
-        EnsureRole(principal, "Admin", "Manager");
+        EnsureRole(principal, "Admin");
         await EnsureProjectAccess(projectId, principal);
         await projects.RemoveMemberAsync(new RemoveProjectMemberRequest { ProjectId = projectId, UserId = userId });
+        return Results.NoContent();
+    })
+    .RequireAuthorization();
+app.MapDelete("/api/projects/{projectId}", async (int projectId, ClaimsPrincipal principal) =>
+    {
+        await EnsureProjectAccess(projectId, principal);
+        await projects.DeleteProjectAsync(new DeleteProjectRequest { Id = projectId });
         return Results.NoContent();
     })
     .RequireAuthorization();
@@ -125,7 +147,7 @@ app.MapGet("/api/projects/{projectId}/tasks", async (int projectId, ClaimsPrinci
     .RequireAuthorization();
 app.MapPost("/api/tasks", async (CreateTaskRequest request, ClaimsPrincipal principal) =>
     {
-        EnsureRole(principal, "Admin", "Manager", "Executor");
+        EnsureRole(principal, "Admin", "Executor");
         var currentUserId = CurrentUserId(principal);
         var project = await EnsureProjectAccess(request.ProjectId, principal);
 
@@ -143,7 +165,7 @@ app.MapPost("/api/tasks", async (CreateTaskRequest request, ClaimsPrincipal prin
     .RequireAuthorization();
 app.MapPost("/api/tasks/{taskId}/assignee", async (int taskId, AssignTaskRequest request, ClaimsPrincipal principal) =>
     {
-        EnsureRole(principal, "Admin", "Manager");
+        EnsureRole(principal, "Admin");
         var task = await tasks.GetTaskAsync(new GetTaskRequest { Id = taskId });
         var project = await EnsureProjectAccess(task.ProjectId, principal);
         if (!project.MemberIds.Contains(request.AssigneeId))
@@ -153,9 +175,17 @@ app.MapPost("/api/tasks/{taskId}/assignee", async (int taskId, AssignTaskRequest
         return Results.Ok(await tasks.AssignTaskAsync(request));
     })
     .RequireAuthorization();
+app.MapDelete("/api/tasks/{taskId}", async (int taskId, ClaimsPrincipal principal) =>
+    {
+        var task = await tasks.GetTaskAsync(new GetTaskRequest { Id = taskId });
+        await EnsureProjectAccess(task.ProjectId, principal);
+        await tasks.DeleteTaskAsync(new DeleteTaskRequest { Id = taskId });
+        return Results.NoContent();
+    })
+    .RequireAuthorization();
 app.MapPost("/api/tasks/{taskId}/status", async (int taskId, ChangeTaskStatusRequest request, ClaimsPrincipal principal) =>
     {
-        EnsureRole(principal, "Admin", "Manager", "Executor");
+        EnsureRole(principal, "Admin", "Executor");
         var currentUserId = CurrentUserId(principal);
         var task = await tasks.GetTaskAsync(new GetTaskRequest { Id = taskId });
         await EnsureProjectAccess(task.ProjectId, principal);
@@ -191,6 +221,33 @@ void EnsureRole(ClaimsPrincipal principal, params string[] roles)
         return;
 
     throw new RpcException(new Status(StatusCode.PermissionDenied, "Insufficient permissions"));
+}
+
+string GenerateToken(int userId, string username, string email, string role)
+{
+    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+        builder.Configuration["Jwt:Key"]
+        ?? throw new InvalidOperationException("Jwt:Key is missing")));
+    var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+    var lifetime = int.TryParse(builder.Configuration["Jwt:LifetimeMinutes"], out var m) ? m : 60;
+
+    var claims = new[]
+    {
+        new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+        new Claim(ClaimTypes.Name, username),
+        new Claim(ClaimTypes.Email, email),
+        new Claim(ClaimTypes.Role, role),
+        new Claim("unique_name", username),
+    };
+
+    var token = new JwtSecurityToken(
+        issuer: builder.Configuration["Jwt:Issuer"],
+        audience: builder.Configuration["Jwt:Audience"],
+        claims: claims,
+        expires: DateTime.UtcNow.AddMinutes(lifetime),
+        signingCredentials: credentials);
+
+    return new JwtSecurityTokenHandler().WriteToken(token);
 }
 
 async Task<ProjectResponse> EnsureProjectAccess(int projectId, ClaimsPrincipal principal)

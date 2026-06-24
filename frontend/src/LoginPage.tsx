@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { authApi, setAccessToken } from "./api";
 
+const DEFAULT_ROLE = 3;
+
 interface Props { onLogin: (userId: number, username: string) => void }
 
 export function LoginPage({ onLogin }: Props) {
@@ -9,8 +11,6 @@ export function LoginPage({ onLogin }: Props) {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState(3);
-  const [specialKey, setSpecialKey] = useState("");
   const [error, setError] = useState("");
 
   const handleLogin = async () => {
@@ -28,8 +28,7 @@ export function LoginPage({ onLogin }: Props) {
       if (!username.trim() || !email.trim() || !password.trim()) { setError("All fields are required"); return; }
       if (!email.includes("@")) { setError("Email must contain @"); return; }
       if (username.includes("@")) { setError("Username cannot contain @"); return; }
-      if ((role === 1 || role === 2) && !specialKey.trim()) { setError("Special key is required for this role"); return; }
-      await authApi.register({ username, email, password, role, specialKey });
+      await authApi.register({ username, email, password, role: DEFAULT_ROLE });
       const { token, user } = await authApi.login({ email, password });
       setAccessToken(token);
       onLogin(user.id, user.username);
@@ -56,21 +55,6 @@ export function LoginPage({ onLogin }: Props) {
           <input placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} style={s} />
           <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} style={s} />
           <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} style={s} />
-          <select value={role} onChange={e => setRole(Number(e.target.value))} style={s}>
-            <option value={1}>Admin</option>
-            <option value={2}>Manager</option>
-            <option value={3}>Executor</option>
-            <option value={4}>Observer</option>
-          </select>
-          {(role === 1 || role === 2) && (
-            <input
-              type="password"
-              placeholder="Special key"
-              value={specialKey}
-              onChange={e => setSpecialKey(e.target.value)}
-              style={s}
-            />
-          )}
           {error && <p style={{ color: "red", fontSize: 14 }}>{error}</p>}
           <button onClick={handleRegister} className="keycap-btn keycap-btn-solid" style={{ width: "100%", padding: 10, marginTop: 16, fontSize: 16 }}>Register</button>
         </>

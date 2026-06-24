@@ -24,6 +24,7 @@ service ProjectService {
   rpc ListProjects (ListProjectsRequest) returns (ListProjectsResponse);
   rpc AddMember (AddProjectMemberRequest) returns (ProjectResponse);
   rpc RemoveMember (RemoveProjectMemberRequest) returns (google.protobuf.Empty);
+  rpc DeleteProject (DeleteProjectRequest) returns (google.protobuf.Empty);
 }
 
 service TaskService {
@@ -32,6 +33,7 @@ service TaskService {
   rpc ListTasks (ListTasksRequest) returns (ListTasksResponse);
   rpc AssignTask (AssignTaskRequest) returns (TaskResponse);
   rpc ChangeStatus (ChangeTaskStatusRequest) returns (TaskResponse);
+  rpc DeleteTask (DeleteTaskRequest) returns (google.protobuf.Empty);
 }
 
 service CommentService {
@@ -45,10 +47,8 @@ service HistoryService {
 
 enum UserRole {
   USER_ROLE_UNSPECIFIED = 0;
-  USER_ROLE_ADMIN = 1;
-  USER_ROLE_MANAGER = 2;
+  USER_ROLE_ADMIN = 2;
   USER_ROLE_EXECUTOR = 3;
-  USER_ROLE_OBSERVER = 4;
 }
 
 enum TaskStatus {
@@ -130,6 +130,10 @@ message RemoveProjectMemberRequest {
   int32 user_id = 2;
 }
 
+message DeleteProjectRequest {
+  int32 id = 1;
+}
+
 message CreateTaskRequest {
   string title = 1;
   string description = 2;
@@ -152,6 +156,10 @@ message ListTasksRequest {
 message AssignTaskRequest {
   int32 task_id = 1;
   int32 assignee_id = 2;
+}
+
+message DeleteTaskRequest {
+  int32 id = 1;
 }
 
 message ChangeTaskStatusRequest {
@@ -188,6 +196,7 @@ message ProjectResponse {
   string description = 3;
   int32 created_by_id = 4;
   repeated int32 member_ids = 5;
+  repeated int32 admin_ids = 6;
 }
 
 message TaskResponse {

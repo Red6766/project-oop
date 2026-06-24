@@ -98,7 +98,17 @@ export function TasksPage({ projectId, userId, userRole, onBack, onDashboard, on
   const [showCreate, setShowCreate] = useState(false);
   const [detailTask, setDetailTask] = useState<TaskRes | null>(null);
   const [statusError, setStatusError] = useState("");
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; task: TaskRes } | null>(null);
+  const [membersProject, setMembersProject] = useState<ProjectRes | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const canAssign = canAssignTasks(userRole);
+
+  useEffect(() => {
+    if (!ctxMenu) return;
+    const close = () => setCtxMenu(null);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [ctxMenu]);
 
   const load = () => taskApi.list(projectId).then(setTasks);
   const loadProject = async () => {
@@ -108,9 +118,8 @@ export function TasksPage({ projectId, userId, userRole, onBack, onDashboard, on
   };
   useEffect(() => { load(); loadProject().catch(() => null); }, [projectId]);
   useEffect(() => {
-    if (!canAssign) return;
     userApi.list().then(setUsers).catch(e => setStatusError(e instanceof Error ? e.message : "Failed to load users"));
-  }, [canAssign]);
+  }, []);
 
   const handleCreate = async (title: string, description: string, priority: number, assigneeId: number) => {
     await taskApi.create({ title, description, projectId, createdById: userId, priority, assigneeId });
@@ -168,11 +177,74 @@ export function TasksPage({ projectId, userId, userRole, onBack, onDashboard, on
         </div>
       </div>
 
+      {/* Members modal */}
+      {membersProject && (
+        <div onClick={() => setMembersProject(null)} className="modal-overlay" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div onClick={e => e.stopPropagation()} className="modal-content" style={{ background: "#fff", padding: 32, maxWidth: 500, width: "92%", boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+              <h3 style={{ margin: 0 }}>Invite members</h3>
+              <button onClick={() => setMembersProject(null)} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "#999" }}>x</button>
+            </div>
+            <p style={{ margin: "0 0 12px", color: "#666", fontSize: 14 }}>{membersProject.name}</p>
+
+            <input placeholder="Search by username or email..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} autoFocus style={{ width: "100%", padding: "10px 12px", marginBottom: 16, border: "1px solid #ddd", fontSize: 14, boxSizing: "border-box" }} />
+
+            <div>
+              <h4 style={{ margin: "0 0 8px", fontSize: 13, color: "#666" }}>Members</h4>
+              {users.filter(u => membersProject.memberIds.includes(u.id)).map(user => (
+                <div key={user.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", padding: "8px 0", borderBottom: "1px solid #eee" }}>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{user.username}</div>
+                  <button onClick={async () => { try { await projectApi.removeMember(membersProject.id, user.id); const updated = await projectApi.get(membersProject.id); setMembersProject(updated); } catch (err) { alert(err instanceof Error ? err.message : "Failed"); } }} className="keycap-btn keycap-btn-ghost" style={{ padding: "4px 10px", fontSize: 12 }}>Remove</button>
+                </div>
+              ))}
+              {users.filter(u => membersProject.memberIds.includes(u.id)).length === 0 && <p style={{ color: "#999", fontSize: 13 }}>No members yet.</p>}
+            </div>
+
+            {searchQuery.trim() && (
+              <div style={{ marginTop: 12 }}>
+                <h4 style={{ margin: "0 0 8px", fontSize: 13, color: "#666" }}>Search results</h4>
+                {users.filter(u => !membersProject.memberIds.includes(u.id) && (u.username.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase()))).map(user => (
+                  <div key={user.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", padding: "8px 0", borderBottom: "1px solid #eee" }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{user.username}</div>
+                      <div style={{ fontSize: 12, color: "#888" }}>{user.email}</div>
+                    </div>
+                    <button onClick={async () => { try { const updated = await projectApi.addMember(membersProject.id, user.id); setMembersProject(updated); setSearchQuery(""); } catch (err) { alert(err instanceof Error ? err.message : "Failed"); } }} className="keycap-btn keycap-btn-outline" style={{ padding: "4px 10px", fontSize: 12 }}>Add</button>
+                  </div>
+                ))}
+                {users.filter(u => !membersProject.memberIds.includes(u.id) && (u.username.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase()))).length === 0 && <p style={{ color: "#999", fontSize: 13 }}>No users found.</p>}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Context menu */}
+      {ctxMenu && (
+        <div style={{ position: "fixed", left: ctxMenu.x, top: ctxMenu.y, zIndex: 2000, background: "#fff", border: "1px solid #222", boxShadow: "0 3px 0 #000, 0 4px 12px rgba(0,0,0,0.12)", minWidth: 160 }}>
+          <button
+            onClick={async () => {
+              const t = ctxMenu.task;
+              setCtxMenu(null);
+              try { await taskApi.delete(t.id); load(); }
+              catch (err) { alert(err instanceof Error ? err.message : "Failed to delete"); }
+            }}
+            className="keycap-btn keycap-btn-outline"
+            style={{ width: "100%", padding: "8px 16px", fontSize: 13, textAlign: "left" }}
+          >
+            Delete task
+          </button>
+        </div>
+      )}
+
       {/* Content */}
       <div style={{ padding: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <button onClick={onBack} className="back-btn keycap-btn keycap-btn-ghost" style={{ padding: "6px 12px", fontSize: 14 }}>← Back to Projects</button>
-          <button onClick={() => setShowCreate(true)} className="keycap-btn keycap-btn-solid">+ New Task</button>
+          <div style={{ display: "flex", gap: 8 }}>
+            {project && <button onClick={() => setMembersProject(project)} className="keycap-btn keycap-btn-outline" style={{ fontSize: 13 }}>Invite</button>}
+            <button onClick={() => setShowCreate(true)} className="keycap-btn keycap-btn-solid">+ New Task</button>
+          </div>
         </div>
 
         {statusError && <p style={{ color: "red", fontSize: 14, marginBottom: 12 }}>{statusError}</p>}
@@ -182,7 +254,7 @@ export function TasksPage({ projectId, userId, userRole, onBack, onDashboard, on
             <div key={col.key} onDragOver={e => e.preventDefault()} onDrop={e => onDrop(e, col.key)} style={{ minWidth: 250, flex: 1, background: "#f5f5f5", padding: 12 }}>
               <h3 style={{ margin: "0 0 12px", fontSize: 15, color: "#555" }}>{col.title}</h3>
               {tasks.filter(t => t.status === col.key).map(t => (
-                <div key={t.id} draggable onDragStart={e => onDragStart(e, t.id)} onClick={() => setDetailTask(t)} style={{ padding: 12, marginBottom: 8, background: "#fff", border: "1px solid #e0e0e0", cursor: "pointer", boxShadow: "0 2px 0 #d0d0d0, 0 1px 3px rgba(0,0,0,0.04)" }}>
+                <div key={t.id} draggable onDragStart={e => onDragStart(e, t.id)} onClick={() => setDetailTask(t)} onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtxMenu({ x: e.clientX, y: e.clientY, task: t }); }} style={{ padding: 12, marginBottom: 8, background: "#fff", border: "1px solid #e0e0e0", cursor: "pointer", boxShadow: "0 2px 0 #d0d0d0, 0 1px 3px rgba(0,0,0,0.04)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <strong style={{ fontSize: 14 }}>{t.title}</strong>
                     <span style={{ fontSize: 11, padding: "2px 6px", background: priorityColors[t.priority] || "#999", color: "#fff" }}>{priorityLabels[t.priority] || "?"}</span>

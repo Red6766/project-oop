@@ -28,7 +28,7 @@ public class AuthLogic(AuthDbContext database)
 
     public async Task<User> AssignRole(int userId, UserRole role, CancellationToken cancellationToken)
     {
-        if (role is not UserRole.Admin and not UserRole.Manager and not UserRole.Executor and not UserRole.Observer)
+        if (role is not UserRole.Admin and not UserRole.Executor)
             throw InvalidArgument("User role is invalid");
 
         var user = await GetUser(userId, cancellationToken);
@@ -109,13 +109,9 @@ public class AuthLogic(AuthDbContext database)
         {
             case UserRole.Admin when specialKey != "admin26":
                 throw new RpcException(new Status(StatusCode.PermissionDenied, "Admin special key is invalid"));
-            case UserRole.Manager when specialKey != "man26":
-                throw new RpcException(new Status(StatusCode.PermissionDenied, "Manager special key is invalid"));
             case UserRole.Executor:
-            case UserRole.Observer:
                 break;
             case UserRole.Admin:
-            case UserRole.Manager:
                 break;
             default:
                 throw InvalidArgument("User role is invalid");

@@ -1,3 +1,4 @@
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,7 @@ public class TaskLogic{
     public async Task<List<TaskItem>> List(int pid,CancellationToken ct)=>await _db.Tasks.Where(t=>t.ProjectId==pid).OrderByDescending(t=>t.CreatedAt).ToListAsync(ct);
     public async Task<TaskItem> Assign(int tid,int assigneeId,CancellationToken ct){if(assigneeId<=0)throw InvalidArgument("Assignee id is required");var t=await Get(tid,ct);t.AssigneeId=assigneeId;t.UpdatedAt=DateTime.UtcNow;await _db.SaveChangesAsync(ct);return t;}
     public async Task<TaskItem> ChangeStatus(int tid,int st,int aid,CancellationToken ct){var t=await Get(tid,ct);if(st!=t.Status+1)throw new RpcException(new Status(StatusCode.InvalidArgument,"Task can only move to the next status"));t.Status=st;t.UpdatedAt=DateTime.UtcNow;await _db.SaveChangesAsync(ct);return t;}
+    public async Task Delete(int id,CancellationToken ct){var t=await Get(id,ct);_db.Tasks.Remove(t);await _db.SaveChangesAsync(ct);}
     static RpcException InvalidArgument(string message)=>new(new Status(StatusCode.InvalidArgument,message));
 }
 public class TaskHandler:TaskManagement.Grpc.TaskService.TaskServiceBase{
@@ -30,4 +32,5 @@ public class TaskHandler:TaskManagement.Grpc.TaskService.TaskServiceBase{
     public override async Task<ListTasksResponse> ListTasks(ListTasksRequest r,ServerCallContext ctx){var l=await _svc.List(r.ProjectId,ctx.CancellationToken);var resp=new ListTasksResponse();foreach(var t in l)resp.Tasks.Add(ToProto(t));return resp;}
     public override async Task<TaskResponse> AssignTask(AssignTaskRequest r,ServerCallContext ctx){var t=await _svc.Assign(r.TaskId,r.AssigneeId,ctx.CancellationToken);return ToProto(t);}
     public override async Task<TaskResponse> ChangeStatus(ChangeTaskStatusRequest r,ServerCallContext ctx){var t=await _svc.ChangeStatus(r.TaskId,(int)r.Status,r.ActorId,ctx.CancellationToken);return ToProto(t);}
+    public override async Task<Empty> DeleteTask(DeleteTaskRequest r,ServerCallContext ctx){await _svc.Delete(r.Id,ctx.CancellationToken);return new Empty();}
     static TaskResponse ToProto(TaskItem t)=>new(){Id=t.Id,Title=t.Title,Description=t.Description,ProjectId=t.ProjectId,AssigneeId=t.AssigneeId,Status=(TaskManagement.Grpc.TaskStatus)t.Status,Priority=(TaskManagement.Grpc.TaskPriority)t.Priority,CreatedById=t.CreatedById,CreatedAt=Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.SpecifyKind(t.CreatedAt,DateTimeKind.Utc)),UpdatedAt=Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.SpecifyKind(t.UpdatedAt,DateTimeKind.Utc))};}

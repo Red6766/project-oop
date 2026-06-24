@@ -24,7 +24,7 @@ pkill -f "vite" 2>/dev/null
 docker compose up -d --build
 
 # 3. Фронтенд
-cd frontend && npm install && npm run dev
+cd frontend && npm run dev
 ```
 
 **Фронтенд:** http://localhost:5173

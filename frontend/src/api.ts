@@ -26,7 +26,7 @@ async function req<T>(url: string, body?: unknown, method?: string): Promise<T> 
 }
 
 export type UserRes = { id: number; username: string; email: string; role: number }
-export type ProjectRes = { id: number; name: string; description: string; createdById: number; memberIds: number[] }
+export type ProjectRes = { id: number; name: string; description: string; createdById: number; memberIds: number[]; adminIds: number[] }
 export type TaskRes = { id: number; title: string; description: string; projectId: number; assigneeId: number; status: number; priority: number; createdById: number }
 
 export type TaskWithProject = TaskRes & { projectName: string }
@@ -58,6 +58,8 @@ export const projectApi = {
     req<ProjectRes>(`/projects/${projectId}/members/${userId}`, {}),
   removeMember: (projectId: number, userId: number) =>
     req<void>(`/projects/${projectId}/members/${userId}`, undefined, "DELETE"),
+  delete: (projectId: number) =>
+    req<void>(`/projects/${projectId}`, undefined, "DELETE"),
 };
 
 export const taskApi = {
@@ -68,6 +70,8 @@ export const taskApi = {
     req<TaskRes>(`/tasks/${taskId}/assignee`, { assigneeId }),
   changeStatus: (taskId: number, data: { status: number; actorId: number }) =>
     req<TaskRes>(`/tasks/${taskId}/status`, data),
+  delete: (taskId: number) =>
+    req<void>(`/tasks/${taskId}`, undefined, "DELETE"),
 };
 
 export async function getAllTasks(): Promise<TaskWithProject[]> {
