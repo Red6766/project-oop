@@ -17,7 +17,11 @@ builder.Services.AddScoped<ProjectLogic>();
 
 var app = builder.Build();
 
-await ProjectDatabaseInitializer.InitializeAsync(app.Services);
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var database = scope.ServiceProvider.GetRequiredService<ProjectDbContext>();
+    await database.Database.MigrateAsync();
+}
 
 app.MapGrpcService<ProjectHandler>();
 app.Run();

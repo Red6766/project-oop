@@ -33,9 +33,6 @@ namespace AuthService.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(320)
@@ -73,7 +70,7 @@ namespace AuthService.Data.Migrations
 
                     b.ToTable("Users", t =>
                         {
-                            t.HasCheckConstraint("CK_Users_Role", "\"Role\" BETWEEN 1 AND 4");
+                            t.HasCheckConstraint("CK_Users_Role", "\"Role\" IN (2, 3)");
 
                             t.HasCheckConstraint("CK_Users_Username_NotEmpty", "length(trim(\"Username\")) >= 3");
                         });

@@ -114,7 +114,7 @@ export function DashboardPage({ userId, onSelectProject, onProjects, onProfile, 
           <h2 style={{ margin: 0 }}>Dashboard</h2>
           {!loading && tasks.length > 0 && (
             <button onClick={() => setCollapsedProjects(collapsedProjects.size > 0 ? new Set() : new Set([...new Set(tasks.map(t => t.projectName))]))} className="keycap-btn keycap-btn-ghost" style={{ fontSize: 12, padding: "4px 10px" }}>
-              {collapsedProjects.size > 0 ? "▦ Expand all" : "▤ Collapse all"}
+              {collapsedProjects.size > 0 ? "Expand all" : "Collapse all"}
             </button>
           )}
         </div>
@@ -156,7 +156,7 @@ export function DashboardPage({ userId, onSelectProject, onProjects, onProfile, 
                             onClick={() => toggleProject(pname)}
                             style={{ fontSize: 12, fontWeight: "bold", color: "#111", marginBottom: isCollapsed ? 0 : 6, padding: "0 4px", cursor: "pointer", userSelect: "none" }}
                           >
-                            {isCollapsed ? "▸ " : "▾ "}{pname} ({groups.get(pname)!.length})
+                            {isCollapsed ? "+ " : "- "}{pname} ({groups.get(pname)!.length})
                           </div>
                           {!isCollapsed && groups.get(pname)!.map(t => {
                             const isExpanded = expandedTasks.has(t.id);
@@ -202,7 +202,7 @@ export function DashboardPage({ userId, onSelectProject, onProjects, onProfile, 
                         </div>
                       );
                     })}
-                    {projectNames.length === 0 && <p style={{ color: "#ccc", textAlign: "center", fontSize: 13 }}>—</p>}
+                    {projectNames.length === 0 && <p style={{ color: "#ccc", textAlign: "center", fontSize: 13 }}>-</p>}
                   </div>
                 );
               });

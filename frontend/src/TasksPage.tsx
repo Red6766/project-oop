@@ -25,9 +25,9 @@ function TaskDetailModal({ task, users, onClose }: { task: TaskRes; users: UserR
       <div onClick={e => e.stopPropagation()} className="modal-content" style={{ background: "#fff", padding: 32, maxWidth: 500, width: "90%", boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 16 }}>
           <h2 style={{ margin: 0 }}>{task.title}</h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "#999" }}>✕</button>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "#999" }}>x</button>
         </div>
-        <p style={{ color: "#666", marginBottom: 16, lineHeight: 1.5 }}>{task.description || "— no description —"}</p>
+        <p style={{ color: "#666", marginBottom: 16, lineHeight: 1.5 }}>{task.description || "No description"}</p>
         <div style={{ display: "flex", gap: 12, fontSize: 14, color: "#888" }}>
           <span>Priority: <strong>{priorityLabels[task.priority] || "?"}</strong></span>
           <span>Status: <strong>{columns.find(c => c.key === task.status)?.title || "?"}</strong></span>
@@ -71,7 +71,7 @@ function CreateTaskModal({
       <div onClick={e => e.stopPropagation()} style={{ background: "#fff", padding: 32, maxWidth: 450, width: "90%", boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <h3 style={{ margin: 0 }}>New Task</h3>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "#999" }}>✕</button>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "#999" }}>x</button>
         </div>
         <input placeholder="Title" value={title} onChange={e => setTitle(e.target.value)} autoFocus style={{ width: "100%", padding: "10px 12px", marginBottom: 12, border: "1px solid #ddd", fontSize: 15, boxSizing: "border-box" }} />
         <input placeholder="Description (optional)" value={description} onChange={e => setDescription(e.target.value)} style={{ width: "100%", padding: "10px 12px", marginBottom: 12, border: "1px solid #ddd", fontSize: 15, boxSizing: "border-box" }} />
@@ -272,7 +272,7 @@ export function TasksPage({ projectId, userId, onBack, onDashboard, onProjects, 
       {/* Content */}
       <div style={{ padding: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <button onClick={onBack} className="back-btn keycap-btn keycap-btn-ghost" style={{ padding: "6px 12px", fontSize: 14 }}>← Back to Projects</button>
+          <button onClick={onBack} className="back-btn keycap-btn keycap-btn-ghost" style={{ padding: "6px 12px", fontSize: 14 }}>Back to Projects</button>
           <div style={{ display: "flex", gap: 8 }}>
             {project?.adminIds.includes(userId) && (
               <button onClick={() => setMembersProject(project)} className="keycap-btn keycap-btn-outline" style={{ fontSize: 13 }}>

@@ -177,7 +177,7 @@ export function ProjectsPage({ userId, onSelectProject, onLogout, onProfile, onD
         </div>
       )}
 
-      {/* Navigation — full width */}
+      {/* Full-width navigation */}
       <div style={{ padding: "24px 24px 16px", borderBottom: "1px solid #eee" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", gap: 8 }}>

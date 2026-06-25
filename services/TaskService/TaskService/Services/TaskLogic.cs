@@ -8,6 +8,7 @@ namespace TaskService.Services;
 public class TaskLogic(TaskDbContext database)
 {
     private const int StatusTodo = 1;
+    private const int StatusDone = 4;
 
     public async Task<TaskItem> Create(
         string title,
@@ -80,7 +81,10 @@ public class TaskLogic(TaskDbContext database)
         CancellationToken cancellationToken)
     {
         var task = await Get(taskId, cancellationToken);
-        if (status != task.Status + 1)
+        if (status is < StatusTodo or > StatusDone)
+            throw InvalidArgument("Task status must be between 1 and 4");
+
+        if (task.Status == StatusDone || status != task.Status + 1)
             throw InvalidArgument("Task can only move to the next status");
 
         task.Status = status;
