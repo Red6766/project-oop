@@ -23,7 +23,6 @@ public class AuthDbContext(DbContextOptions<AuthDbContext> options) : DbContext(
             entity.ToTable(table =>
             {
                 table.HasCheckConstraint("CK_Users_Username_NotEmpty", "length(trim(\"Username\")) >= 3");
-                table.HasCheckConstraint("CK_Users_Role", "\"Role\" IN (2, 3)");
             });
         });
     }

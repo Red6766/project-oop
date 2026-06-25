@@ -36,12 +36,6 @@ service TaskService {
   rpc DeleteTasksByProject (DeleteTasksByProjectRequest) returns (google.protobuf.Empty);
 }
 
-enum UserRole {
-  USER_ROLE_UNSPECIFIED = 0;
-  USER_ROLE_ADMIN = 2;
-  USER_ROLE_EXECUTOR = 3;
-}
-
 enum TaskStatus {
   TASK_STATUS_UNSPECIFIED = 0;
   TASK_STATUS_TODO = 1;

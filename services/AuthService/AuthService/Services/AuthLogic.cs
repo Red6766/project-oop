@@ -56,8 +56,7 @@ public class AuthLogic(AuthDbContext database)
             NormalizedUsername = normalizedUsername,
             Email = email.ToLowerInvariant(),
             NormalizedEmail = normalizedEmail,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-            Role = UserRole.Executor
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password)
         };
 
         database.Users.Add(user);
