@@ -221,7 +221,16 @@ export function TasksPage({ projectId, userId, onBack, onDashboard, onProjects, 
                       <div style={{ fontSize: 14, fontWeight: 600 }}>{user.username}</div>
                       <div style={{ fontSize: 12, color: "#888" }}>{user.email}</div>
                     </div>
-                    <button onClick={async () => { try { const updated = await projectApi.addMember(membersProject.id, user.id); setMembersProject(updated); setSearchQuery(""); } catch (err) { alert(err instanceof Error ? err.message : "Failed"); } }} className="keycap-btn keycap-btn-outline" style={{ padding: "4px 10px", fontSize: 12 }}>Add</button>
+                    <button onClick={async () => {
+                      try {
+                        const updated = await projectApi.addMember(membersProject.id, user.id);
+                        setMembersProject(updated);
+                        setProject(updated);
+                        setSearchQuery("");
+                      } catch (err) {
+                        alert(err instanceof Error ? err.message : "Failed");
+                      }
+                    }} className="keycap-btn keycap-btn-outline" style={{ padding: "4px 10px", fontSize: 12 }}>Add</button>
                   </div>
                 ))}
                 {users.filter(u => !membersProject.memberIds.includes(u.id) && (u.username.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase()))).length === 0 && <p style={{ color: "#999", fontSize: 13 }}>No users found.</p>}
