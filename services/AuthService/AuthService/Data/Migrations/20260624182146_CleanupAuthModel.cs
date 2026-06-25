@@ -15,9 +15,10 @@ namespace AuthService.Data.Migrations
                 name: "CK_Users_Role",
                 table: "Users");
 
-            migrationBuilder.DropColumn(
-                name: "CreatedAt",
-                table: "Users");
+            migrationBuilder.Sql("""
+                ALTER TABLE "Users"
+                DROP COLUMN IF EXISTS "CreatedAt";
+                """);
 
             migrationBuilder.Sql("UPDATE \"Users\" SET \"Role\" = 2 WHERE \"Role\" = 1");
 

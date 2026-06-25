@@ -26,7 +26,14 @@ async function req<T>(url: string, body?: unknown, method?: string): Promise<T> 
 }
 
 export type UserRes = { id: number; username: string; email: string }
-export type ProjectRes = { id: number; name: string; description: string; createdById: number; memberIds: number[] }
+export type ProjectRes = {
+  id: number;
+  name: string;
+  description: string;
+  createdById: number;
+  memberIds: number[];
+  adminIds: number[];
+}
 export type TaskRes = { id: number; title: string; description: string; projectId: number; assigneeId: number; status: number; priority: number; createdById: number }
 
 export type TaskWithProject = TaskRes & { projectName: string }

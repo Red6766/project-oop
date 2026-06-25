@@ -45,7 +45,12 @@ function MembersModal({
                   <div style={{ fontSize: 14, fontWeight: 600 }}>{user.username}</div>
                   <div style={{ fontSize: 12, color: "#888" }}>{user.email}</div>
                 </div>
-                <button disabled={busyUserId === user.id} onClick={() => run(user.id, onRemove)} className="keycap-btn keycap-btn-ghost" style={{ padding: "4px 10px", fontSize: 12 }}>Remove</button>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 12, color: "#777" }}>
+                    {project.adminIds.includes(user.id) ? "Admin" : "Executor"}
+                  </span>
+                  <button disabled={busyUserId === user.id} onClick={() => run(user.id, onRemove)} className="keycap-btn keycap-btn-ghost" style={{ padding: "4px 10px", fontSize: 12 }}>Remove</button>
+                </div>
               </div>
             ))}
             {members.length === 0 && <p style={{ color: "#999", fontSize: 13 }}>No members yet.</p>}
@@ -136,10 +141,13 @@ export function ProjectsPage({ userId, onSelectProject, onLogout, onProfile, onD
                 <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#222", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: "bold" }}>
                   {user.username.charAt(0).toUpperCase()}
                 </div>
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600 }}>{user.username}</div>
                   <div style={{ fontSize: 12, color: "#888" }}>{user.email}</div>
                 </div>
+                <span style={{ marginLeft: "auto", fontSize: 12, color: "#777" }}>
+                  {viewMembersProject.adminIds.includes(user.id) ? "Admin" : "Executor"}
+                </span>
               </div>
             ))}
           </div>

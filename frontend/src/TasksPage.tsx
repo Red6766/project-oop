@@ -191,7 +191,12 @@ export function TasksPage({ projectId, userId, onBack, onDashboard, onProjects, 
               {users.filter(u => membersProject.memberIds.includes(u.id)).map(user => (
                 <div key={user.id} style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", padding: "8px 0", borderBottom: "1px solid #eee" }}>
                   <div style={{ fontSize: 14, fontWeight: 600 }}>{user.username}</div>
-                  <button onClick={async () => { try { await projectApi.removeMember(membersProject.id, user.id); const updated = await projectApi.get(membersProject.id); setMembersProject(updated); } catch (err) { alert(err instanceof Error ? err.message : "Failed"); } }} className="keycap-btn keycap-btn-ghost" style={{ padding: "4px 10px", fontSize: 12 }}>Remove</button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 12, color: "#777" }}>
+                      {membersProject.adminIds.includes(user.id) ? "Admin" : "Executor"}
+                    </span>
+                    <button onClick={async () => { try { await projectApi.removeMember(membersProject.id, user.id); const updated = await projectApi.get(membersProject.id); setMembersProject(updated); } catch (err) { alert(err instanceof Error ? err.message : "Failed"); } }} className="keycap-btn keycap-btn-ghost" style={{ padding: "4px 10px", fontSize: 12 }}>Remove</button>
+                  </div>
                 </div>
               ))}
               {users.filter(u => membersProject.memberIds.includes(u.id)).length === 0 && <p style={{ color: "#999", fontSize: 13 }}>No members yet.</p>}
