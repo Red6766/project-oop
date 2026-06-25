@@ -195,7 +195,17 @@ export function TasksPage({ projectId, userId, onBack, onDashboard, onProjects, 
                     <span style={{ fontSize: 12, color: "#777" }}>
                       {membersProject.adminIds.includes(user.id) ? "Admin" : "Executor"}
                     </span>
-                    <button onClick={async () => { try { await projectApi.removeMember(membersProject.id, user.id); const updated = await projectApi.get(membersProject.id); setMembersProject(updated); } catch (err) { alert(err instanceof Error ? err.message : "Failed"); } }} className="keycap-btn keycap-btn-ghost" style={{ padding: "4px 10px", fontSize: 12 }}>Remove</button>
+                    <button onClick={async () => {
+                      try {
+                        await projectApi.removeMember(membersProject.id, user.id);
+                        const updated = await projectApi.get(membersProject.id);
+                        setMembersProject(updated);
+                        setProject(updated);
+                        await load();
+                      } catch (err) {
+                        alert(err instanceof Error ? err.message : "Failed");
+                      }
+                    }} className="keycap-btn keycap-btn-ghost" style={{ padding: "4px 10px", fontSize: 12 }}>Remove</button>
                   </div>
                 </div>
               ))}
