@@ -77,6 +77,17 @@ public class TaskHandler(TaskLogic tasks) : TaskManagement.Grpc.TaskService.Task
         return new Empty();
     }
 
+    public override async Task<TaskResponse> UpdateTaskDescription(
+        UpdateTaskDescriptionRequest request,
+        ServerCallContext context)
+    {
+        var task = await tasks.UpdateDescription(
+            request.TaskId,
+            request.Description,
+            context.CancellationToken);
+        return ToProto(task);
+    }
+
     public override async Task<Empty> DeleteTasksByProject(
         DeleteTasksByProjectRequest request,
         ServerCallContext context)

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { generateAIDescription, projectApi, taskApi, userApi } from "./api";
+import { aiImproveDescription, generateAIDescription, projectApi, taskApi, userApi } from "./api";
 import type { ProjectRes, TaskRes, UserRes } from "./api";
 
 interface Props { projectId: number; userId: number; onBack: () => void; onDashboard?: () => void; onProjects?: () => void; onProfile?: () => void; onLogout?: () => void }
@@ -20,19 +20,87 @@ function userName(users: UserRes[], userId: number) {
 }
 
 function TaskDetailModal({ task, users, onClose }: { task: TaskRes; users: UserRes[]; onClose: () => void }) {
+  const [aiText, setAiText] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [applyLoading, setApplyLoading] = useState(false);
+  const [showAi, setShowAi] = useState(false);
+
+  const handleGenerate = async () => {
+    if (!feedback.trim()) return;
+    setAiLoading(true);
+    setAiError("");
+    try {
+      const result = await aiImproveDescription(task.title, feedback || task.description);
+      setAiText(result);
+      setFeedback("");
+    } catch (e: unknown) {
+      setAiError(e instanceof Error ? e.message : "AI error");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleApply = async () => {
+    setApplyLoading(true);
+    try {
+      const updated = await taskApi.updateDescription(task.id, aiText);
+      Object.assign(task, updated);
+      setShowAi(false);
+      setAiText("");
+    } catch (e: unknown) {
+      setAiError(e instanceof Error ? e.message : "Failed to update");
+    } finally {
+      setApplyLoading(false);
+    }
+  };
+
   return (
     <div onClick={onClose} className="modal-overlay" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-      <div onClick={e => e.stopPropagation()} className="modal-content" style={{ background: "#fff", padding: 32, maxWidth: 500, width: "90%", boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
+      <div onClick={e => e.stopPropagation()} className="modal-content" style={{ background: "#fff", padding: 32, maxWidth: 520, width: "90%", boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 16 }}>
           <h2 style={{ margin: 0 }}>{task.title}</h2>
           <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", color: "#999" }}>x</button>
         </div>
         <p style={{ color: "#666", marginBottom: 16, lineHeight: 1.5 }}>{task.description || "No description"}</p>
-        <div style={{ display: "flex", gap: 12, fontSize: 14, color: "#888" }}>
+        <div style={{ display: "flex", gap: 12, fontSize: 14, color: "#888", marginBottom: 16 }}>
           <span>Priority: <strong>{priorityLabels[task.priority] || "?"}</strong></span>
           <span>Status: <strong>{columns.find(c => c.key === task.status)?.title || "?"}</strong></span>
           <span>Assignee: <strong>{userName(users, task.assigneeId)}</strong></span>
         </div>
+
+        {/* Edit description */}
+        <button onClick={() => { setShowAi(!showAi); if (!showAi) setAiText(task.description || ""); }} className="keycap-btn keycap-btn-outline" style={{ fontSize: 12, padding: "6px 12px", marginBottom: 12 }}>
+          {showAi ? "Cancel" : "Edit description"}
+        </button>
+
+        {aiError && <p style={{ color: "red", fontSize: 13, marginBottom: 8 }}>{aiError}</p>}
+
+        {showAi && (
+          <div>
+            <textarea
+              value={aiText}
+              onChange={e => setAiText(e.target.value)}
+              rows={4}
+              style={{ width: "100%", padding: 10, border: "1px solid #ddd", fontSize: 13, boxSizing: "border-box", resize: "vertical", marginBottom: 8 }}
+            />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={handleApply} disabled={applyLoading} className="keycap-btn keycap-btn-solid" style={{ fontSize: 12, padding: "6px 14px" }}>
+                {applyLoading ? "..." : "Save"}
+              </button>
+              <input
+                placeholder="AI prompt (optional — make shorter, more detailed...)"
+                value={feedback}
+                onChange={e => setFeedback(e.target.value)}
+                style={{ flex: 1, padding: "8px 10px", border: "1px solid #ddd", fontSize: 13, boxSizing: "border-box" }}
+              />
+              <button onClick={handleGenerate} disabled={aiLoading || !feedback.trim()} className="keycap-btn keycap-btn-outline" style={{ fontSize: 12, whiteSpace: "nowrap" }}>
+                {aiLoading ? "..." : "Generate with AI"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

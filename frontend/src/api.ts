@@ -46,6 +46,87 @@ export async function generateAIDescription(title: string): Promise<string> {
   return data.choices?.[0]?.message?.content?.trim() || "No description generated.";
 }
 
+export async function aiGenerateSubtasks(title: string, description: string): Promise<string> {
+  const key = getApiKey();
+  if (!key) throw new Error("API key not set. Add it in Profile.");
+
+  const res = await fetch("https://api.deepseek.com/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: "deepseek-chat",
+      messages: [{
+        role: "user",
+        content: `Разбей задачу на подзадачи. Название: "${title}". Описание: "${description}". Напиши список из 3-5 пунктов, каждый с новой строки, начиная с "- ". Без лишнего текста.`,
+      }],
+      temperature: 0.7,
+      max_tokens: 500,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.error?.message || `API error: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content?.trim() || "Error generating subtasks.";
+}
+
+export async function aiImproveDescription(title: string, description: string): Promise<string> {
+  const key = getApiKey();
+  if (!key) throw new Error("API key not set. Add it in Profile.");
+
+  const res = await fetch("https://api.deepseek.com/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: "deepseek-chat",
+      messages: [{
+        role: "user",
+        content: `Улучши описание задачи. Название: "${title}". Текущее описание: "${description || "(пусто)"}". Напиши улучшенное описание на русском (2-3 предложения). Только описание, без лишнего текста.`,
+      }],
+      temperature: 0.7,
+      max_tokens: 300,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.error?.message || `API error: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content?.trim() || "Error improving description.";
+}
+
+export async function aiRegenerateWithFeedback(title: string, description: string, feedback: string): Promise<string> {
+  const key = getApiKey();
+  if (!key) throw new Error("API key not set. Add it in Profile.");
+
+  const res = await fetch("https://api.deepseek.com/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: "deepseek-chat",
+      messages: [{
+        role: "user",
+        content: `Задача: "${title}". Текущее описание: "${description || "(пусто)"}". Пользователь хочет: "${feedback}". Напиши улучшенное описание на русском (2-3 предложения). Только описание, без лишнего текста.`,
+      }],
+      temperature: 0.7,
+      max_tokens: 300,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => null);
+    throw new Error(err?.error?.message || `API error: ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content?.trim() || "Error.";
+}
+
 async function req<T>(url: string, body?: unknown, method?: string): Promise<T> {
   const requestMethod = method || (body ? "POST" : "GET");
   const r = await fetch(BASE + url, {
@@ -118,6 +199,8 @@ export const taskApi = {
     req<TaskRes>(`/tasks/${taskId}/status`, data),
   delete: (taskId: number) =>
     req<void>(`/tasks/${taskId}`, undefined, "DELETE"),
+  updateDescription: (taskId: number, description: string) =>
+    req<TaskRes>(`/tasks/${taskId}/description`, { description }),
 };
 
 export async function getAllTasks(): Promise<TaskWithProject[]> {

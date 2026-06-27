@@ -177,6 +177,14 @@ app.MapDelete("/api/tasks/{taskId}", async (int taskId, ClaimsPrincipal principa
         return Results.NoContent();
     })
     .RequireAuthorization();
+app.MapPost("/api/tasks/{taskId}/description", async (int taskId, UpdateTaskDescriptionRequest request, ClaimsPrincipal principal) =>
+    {
+        var task = await tasks.GetTaskAsync(new GetTaskRequest { Id = taskId });
+        await EnsureProjectAccess(task.ProjectId, principal);
+        request.TaskId = taskId;
+        return Results.Ok(await tasks.UpdateTaskDescriptionAsync(request));
+    })
+    .RequireAuthorization();
 app.MapPost("/api/tasks/{taskId}/status", async (int taskId, ChangeTaskStatusRequest request, ClaimsPrincipal principal) =>
     {
         var currentUserId = CurrentUserId(principal);

@@ -34,6 +34,7 @@ service TaskService {
   rpc ChangeStatus (ChangeTaskStatusRequest) returns (TaskResponse);
   rpc DeleteTask (DeleteTaskRequest) returns (google.protobuf.Empty);
   rpc DeleteTasksByProject (DeleteTasksByProjectRequest) returns (google.protobuf.Empty);
+  rpc UpdateTaskDescription (UpdateTaskDescriptionRequest) returns (TaskResponse);
 }
 
 enum TaskStatus {
@@ -142,6 +143,11 @@ message DeleteTaskRequest {
 
 message DeleteTasksByProjectRequest {
   int32 project_id = 1;
+}
+
+message UpdateTaskDescriptionRequest {
+  int32 task_id = 1;
+  string description = 2;
 }
 
 message ChangeTaskStatusRequest {
