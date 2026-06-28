@@ -199,6 +199,8 @@ export const taskApi = {
     req<TaskRes>(`/tasks/${taskId}/status`, data),
   delete: (taskId: number) =>
     req<void>(`/tasks/${taskId}`, undefined, "DELETE"),
+  updateTitle: (taskId: number, title: string) =>
+    req<TaskRes>(`/tasks/${taskId}/title`, { title }),
   updateDescription: (taskId: number, description: string) =>
     req<TaskRes>(`/tasks/${taskId}/description`, { description }),
 };

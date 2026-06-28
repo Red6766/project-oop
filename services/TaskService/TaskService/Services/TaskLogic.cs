@@ -110,6 +110,17 @@ public class TaskLogic(TaskDbContext database)
         return task;
     }
 
+    public async Task<TaskItem> UpdateTitle(
+        int taskId,
+        string title,
+        CancellationToken cancellationToken)
+    {
+        var task = await Get(taskId, cancellationToken);
+        task.Title = title;
+        await database.SaveChangesAsync(cancellationToken);
+        return task;
+    }
+
     public async Task DeleteByProject(
         int projectId,
         CancellationToken cancellationToken)

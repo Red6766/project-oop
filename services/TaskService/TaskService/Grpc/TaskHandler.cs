@@ -88,6 +88,17 @@ public class TaskHandler(TaskLogic tasks) : TaskManagement.Grpc.TaskService.Task
         return ToProto(task);
     }
 
+    public override async Task<TaskResponse> UpdateTaskTitle(
+        UpdateTaskTitleRequest request,
+        ServerCallContext context)
+    {
+        var task = await tasks.UpdateTitle(
+            request.TaskId,
+            request.Title,
+            context.CancellationToken);
+        return ToProto(task);
+    }
+
     public override async Task<Empty> DeleteTasksByProject(
         DeleteTasksByProjectRequest request,
         ServerCallContext context)
