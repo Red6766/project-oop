@@ -4,6 +4,19 @@ import type { ProjectRes, TaskRes, UserRes } from "./api";
 import { columns, priorityLabels, priorityColors, userName } from "./taskConstants";
 import { TaskDetailModal } from "./TaskDetailPanel";
 
+const userPalette = [
+  { bg: "#f5ecec", border: "#dbb5b5" },
+  { bg: "#ecf0f5", border: "#b5c8db" },
+  { bg: "#f5f0ec", border: "#dbc9b5" },
+  { bg: "#eef5ec", border: "#bcdbb5" },
+  { bg: "#f5ecf3", border: "#dbb5cf" },
+  { bg: "#ecf5f5", border: "#b5d4db" },
+  { bg: "#f5f0ec", border: "#dbceb5" },
+  { bg: "#f2ecf5", border: "#c8b5db" },
+  { bg: "#f5ecec", border: "#dbbfc5" },
+  { bg: "#ecf5f0", border: "#b5dbc8" },
+];
+
 interface Props { projectId: number; userId: number; onBack: () => void; onDashboard?: () => void; onProjects?: () => void; onProfile?: () => void; onLogout?: () => void }
 
 function CreateTaskModal({
@@ -290,31 +303,53 @@ export function TasksPage({ projectId, userId, onBack, onDashboard, onProjects, 
         transition: "transform 0.15s ease, max-width 0.15s ease",
       }}>
         <div style={{ display: "flex", gap: 16, overflowX: "auto", flex: 1, minHeight: 0 }}>
-          {columns.map(col => (
-            <div key={col.key} onDragOver={e => e.preventDefault()} onDrop={e => onDrop(e, col.key)} style={{ flex: "1 1 0%", minWidth: 180, background: "#f5f5f5", padding: "12px 12px 32px", overflowY: "auto" }}>
-              <h3 style={{ margin: "0 0 12px", fontSize: 15, color: "#555" }}>{col.title}</h3>
-              {tasks.filter(t => t.status === col.key).map(t => (
-                <div key={t.id} draggable onDragStart={e => onDragStart(e, t.id)} onClick={() => setDetailTask(detailTask?.id === t.id ? null : t)} onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtxMenu({ x: e.clientX, y: e.clientY, task: t }); }} style={{ padding: 12, marginBottom: 8, background: "#fff", border: "1px solid #e0e0e0", cursor: "pointer", boxShadow: "0 2px 0 #d0d0d0, 0 1px 3px rgba(0,0,0,0.04)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <strong style={{ fontSize: 14 }}>{t.title}</strong>
-                    <span style={{ fontSize: 11, padding: "2px 6px", background: priorityColors[t.priority] || "#999", color: "#fff" }}>{priorityLabels[t.priority] || "?"}</span>
-                  </div>
-                  {t.description && <p style={{ margin: "4px 0 0", fontSize: 13, color: "#888" }}>{t.description}</p>}
-                  <div style={{ marginTop: 8, fontSize: 12, color: "#777" }}>Assignee: <strong>{userName(users, t.assigneeId)}</strong></div>
-                  {isProjectAdmin && (
-                    <select
-                      value={t.assigneeId}
-                      onClick={e => e.stopPropagation()}
-                      onChange={e => assignTask(t.id, Number(e.target.value))}
-                      style={{ width: "100%", marginTop: 8, padding: "6px 8px", border: "1px solid #ddd", fontSize: 13 }}
-                    >
-                      {users.filter(user => project?.memberIds.includes(user.id)).map(user => <option key={user.id} value={user.id}>{user.username}</option>)}
-                    </select>
-                  )}
-                </div>
-              ))}
-            </div>
-          ))}
+          {columns.map(col => {
+            const colTasks = tasks.filter(t => t.status === col.key);
+            const groups = new Map<number, TaskRes[]>();
+            colTasks.forEach(t => {
+              const g = groups.get(t.assigneeId) || [];
+              g.push(t);
+              groups.set(t.assigneeId, g);
+            });
+            const assigneeIds = [...groups.keys()];
+            const colorMap = new Map<number, (typeof userPalette)[number]>();
+            assigneeIds.forEach((id, i) => colorMap.set(id, userPalette[i % userPalette.length]));
+            return (
+              <div key={col.key} onDragOver={e => e.preventDefault()} onDrop={e => onDrop(e, col.key)} style={{ flex: "1 1 0%", minWidth: 180, background: "#f5f5f5", padding: "12px 12px 32px", overflowY: "auto" }}>
+                <h3 style={{ margin: "0 0 12px", fontSize: 15, color: "#000" }}>{col.title} ({colTasks.length})</h3>
+                {assigneeIds.map(aid => {
+                  const color = colorMap.get(aid)!;
+                  return (
+                    <div key={aid} style={{ marginBottom: 12, background: color.bg, borderLeft: `4px solid ${color.border}`, padding: 8 }}>
+                      <div style={{ fontSize: 12, fontWeight: "bold", color: "#111", marginBottom: 6, padding: "0 4px" }}>
+                        {userName(users, aid)} ({groups.get(aid)!.length})
+                      </div>
+                      {groups.get(aid)!.map(t => (
+                        <div key={t.id} draggable onDragStart={e => onDragStart(e, t.id)} onClick={() => setDetailTask(detailTask?.id === t.id ? null : t)} onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtxMenu({ x: e.clientX, y: e.clientY, task: t }); }} className="keycap-card" style={{ padding: 12, marginBottom: 8 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <strong style={{ fontSize: 14 }}>{t.title}</strong>
+                            <span style={{ fontSize: 11, padding: "2px 6px", background: priorityColors[t.priority] || "#999", color: "#fff" }}>{priorityLabels[t.priority] || "?"}</span>
+                          </div>
+                          {t.description && <p style={{ margin: "4px 0 0", fontSize: 13, color: "#888" }}>{t.description}</p>}
+                          <div style={{ marginTop: 8, fontSize: 12, color: "#777" }}>Assignee: <strong>{userName(users, t.assigneeId)}</strong></div>
+                          {isProjectAdmin && (
+                            <select
+                              value={t.assigneeId}
+                              onClick={e => e.stopPropagation()}
+                              onChange={e => assignTask(t.id, Number(e.target.value))}
+                              style={{ width: "100%", marginTop: 8, padding: "6px 8px", border: "1px solid #ddd", fontSize: 13 }}
+                            >
+                              {users.filter(user => project?.memberIds.includes(user.id)).map(user => <option key={user.id} value={user.id}>{user.username}</option>)}
+                            </select>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </div>
       </div>
